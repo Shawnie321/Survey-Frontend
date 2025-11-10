@@ -22,7 +22,7 @@ export default function Register() {
         if (!res.ok) throw new Error("Registration failed");
         setMessage("Registration successful! You can now log in.");
         setTimeout(() => navigate("/login"), 1500);
-    } catch (err) {
+    } catch {
         setMessage("Registration failed. Try again.");
     }
 }

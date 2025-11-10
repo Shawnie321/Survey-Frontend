@@ -8,6 +8,7 @@ export default function CreateSurvey() {
     questionText: "",
     questionType: "Text",
     options: "",
+    isRequired: false,
   });
   const [message, setMessage] = useState("");
 
@@ -21,7 +22,7 @@ export default function CreateSurvey() {
       return;
     }
     setQuestions([...questions, newQuestion]);
-    setNewQuestion({ questionText: "", questionType: "Text", options: "" });
+    setNewQuestion({ questionText: "", questionType: "Text", options: "", isRequired: false });
     setMessage("");
   };
 
@@ -43,7 +44,7 @@ export default function CreateSurvey() {
       title,
       description,
       createdBy: username,
-      questions, // array of question objects
+      questions, // array of question objects (includes isRequired)
     };
 
     try {
@@ -173,6 +174,21 @@ export default function CreateSurvey() {
             />
           )}
 
+          {/* Required checkbox */}
+          <div className="flex items-center gap-2 mt-2 mb-4">
+            <label className="flex items-center text-sm">
+              <input
+                type="checkbox"
+                checked={newQuestion.isRequired}
+                onChange={(e) =>
+                  setNewQuestion({ ...newQuestion, isRequired: e.target.checked })
+                }
+                className="mr-2"
+              />
+              Required
+            </label>
+          </div>
+
           <button
             type="button"
             onClick={addQuestion}
@@ -198,9 +214,8 @@ export default function CreateSurvey() {
                     <p className="font-medium">{q.questionText}</p>
                     <p className="text-sm text-gray-500">
                       Type: {q.questionType}
-                      {q.options && (
-                        <span> — Options: {q.options}</span>
-                      )}
+                      {q.options && <span> — Options: {q.options}</span>}
+                      {q.isRequired && <span> — Required</span>}
                     </p>
                   </div>
                   <button
