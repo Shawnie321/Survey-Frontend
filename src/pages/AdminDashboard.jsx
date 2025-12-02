@@ -118,7 +118,7 @@ export default function AdminDashboard() {
     pdf.save(`${selected?.title || "Survey"}_Responses.pdf`);
   }
 
-  //Delete Response ---
+  // --- Edit / Delete Response ---
   function startEdit(response) {
     setEditingResponse({ ...response });
   }
