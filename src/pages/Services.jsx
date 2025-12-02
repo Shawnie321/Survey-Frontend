@@ -1,13 +1,45 @@
 export default function Services() {
   return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-4 text-center">Our Services</h2>
-      <ul className="list-disc pl-8">
-        <li>Personal Training</li>
-        <li>Group Classes</li>
-        <li>Nutrition Counseling</li>
-        <li>Strength and Conditioning</li>
-      </ul>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-8 flex items-center justify-center">
+      <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <h2 className="text-4xl font-extrabold mb-6 text-blue-700 text-center tracking-tight">
+          Our Services
+        </h2>
+        <div className="grid gap-6">
+          <div className="bg-blue-50 rounded-xl p-6 shadow flex flex-col items-center">
+            <span className="text-2xl font-bold text-blue-600 mb-2">
+              Personal Training
+            </span>
+            <p className="text-gray-700 text-center">
+              One-on-one coaching tailored to your goals and fitness level.
+            </p>
+          </div>
+          <div className="bg-green-50 rounded-xl p-6 shadow flex flex-col items-center">
+            <span className="text-2xl font-bold text-green-600 mb-2">
+              Group Classes
+            </span>
+            <p className="text-gray-700 text-center">
+              Fun, motivating group workouts for all skill levels.
+            </p>
+          </div>
+          <div className="bg-yellow-50 rounded-xl p-6 shadow flex flex-col items-center">
+            <span className="text-2xl font-bold text-yellow-600 mb-2">
+              Nutrition Counseling
+            </span>
+            <p className="text-gray-700 text-center">
+              Personalized nutrition plans and expert advice.
+            </p>
+          </div>
+          <div className="bg-purple-50 rounded-xl p-6 shadow flex flex-col items-center">
+            <span className="text-2xl font-bold text-purple-600 mb-2">
+              Strength & Conditioning
+            </span>
+            <p className="text-gray-700 text-center">
+              Programs to build strength, endurance, and overall fitness.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
