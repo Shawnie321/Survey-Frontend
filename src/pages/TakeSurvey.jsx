@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 export default function TakeSurvey() {
@@ -7,6 +7,8 @@ export default function TakeSurvey() {
   const [survey, setSurvey] = useState(null);
   const [answers, setAnswers] = useState({});
   const [invalidIds, setInvalidIds] = useState([]);
+  const [consent, setConsent] = useState(false);
+  const [error, setError] = useState("");
   const username = localStorage.getItem("username") || "Anonymous";
 
   useEffect(() => {
@@ -57,33 +59,27 @@ export default function TakeSurvey() {
     return invalid;
   }
 
-  async function handleSubmit() {
-    // Validate required questions first
-    const invalid = validateRequiredQuestions();
-    if (invalid.length > 0) {
-      setInvalidIds(invalid);
-      // scroll to first invalid question
-      const el = document.querySelector(`[data-qid="${invalid[0]}"]`);
-      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      alert("Please answer all required questions (highlighted in red).");
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!consent) {
+      setError("You must give consent to submit this survey.");
       return;
     }
 
-    // Build answers array in server format
-    const answerList = survey.questions.map((q) => {
-      const val = answers[q.id];
-      return {
-        questionId: q.id,
-        answerText: q.questionType === "Text" ? (val || "") : null,
-        ratingValue: q.questionType === "Rating" ? (val ? Number(val) : null) : null,
-        // For multiple choice treat as answerText
-        ...(q.questionType === "MultipleChoice" ? { answerText: val || "" } : {}),
-      };
-    });
-
     const payload = {
       username,
-      answers: answerList,
+      answers: survey.questions.map((q) => {
+        const val = answers[q.id];
+        return {
+          questionId: q.id,
+          answerText: q.questionType === "Text" ? (val || "") : null,
+          ratingValue: q.questionType === "Rating" ? (val ? Number(val) : null) : null,
+          // For multiple choice treat as answerText
+          ...(q.questionType === "MultipleChoice" ? { answerText: val || "" } : {}),
+        };
+      }),
+      ConsentGiven: consent,
     };
 
     try {
@@ -97,10 +93,11 @@ export default function TakeSurvey() {
         throw new Error(txt || "Failed to submit");
       }
       localStorage.setItem(`survey_${id}_${username}`, "completed");
+      setConsent(false);
+      setError("");
       navigate("/surveys");
     } catch (err) {
-      console.error("Submit error:", err);
-      alert("Failed to submit survey.");
+      setError(err?.message || "Submission failed");
     }
   }
 
@@ -116,7 +113,7 @@ export default function TakeSurvey() {
         />
       </div>
 
-      <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {survey.questions.map((q) => {
           const isInvalid = invalidIds.includes(q.id);
           return (
@@ -172,9 +169,25 @@ export default function TakeSurvey() {
             </div>
           );
         })}
-      </div>
 
-      <button onClick={handleSubmit} className="mt-6 bg-green-600 text-white px-6 py-2 rounded">Submit Survey</button>
+        {/* Consent checkbox */}
+        <div className="flex items-start gap-3">
+          <input
+            id="consent"
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => { setConsent(e.target.checked); if (error) setError(""); }}
+            className="mt-1 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+          />
+          <label htmlFor="consent" className="text-sm text-gray-700">
+            I agree to the privacy terms and conditions. <span className="text-gray-400">(Required)</span>
+          </label>
+        </div>
+
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+
+        <button type="submit" className="mt-6 bg-green-600 text-white px-6 py-2 rounded">Submit Survey</button>
+      </form>
     </div>
   );
 }

@@ -17,30 +17,35 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <nav className="bg-blue-600 text-white p-4">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <nav className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-4 shadow-xl">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-6">
-            <Link to="/" className="font-semibold hover:underline">Home</Link>
-            <Link to="/About" className="hover:underline">About</Link>
-            <Link to="/services" className="hover:underline">Services</Link>
-            <Link to="/surveys" className="hover:underline">Surveys</Link>
-            {role === "Admin" && (
-              <>
-                <Link to="/create-survey" className="hover:underline">Create Survey</Link>
-                <Link to="/admin" className="hover:underline">Admin</Link>
-              </>
-            )}
+            <Link to="/" className="font-semibold hover:underline text-lg">
+              SurveySite
+            </Link>
+            <div className="hidden md:flex items-center gap-3">
+              <Link to="/" className="px-3 py-1 rounded-lg hover:bg-white/10">Home</Link>
+              <Link to="/About" className="px-3 py-1 rounded-lg hover:bg-white/10">About</Link>
+              <Link to="/services" className="px-3 py-1 rounded-lg hover:bg-white/10">Services</Link>
+              <Link to="/surveys" className="px-3 py-1 rounded-lg hover:bg-white/10">Surveys</Link>
+              {role === "Admin" && (
+                <>
+                  <Link to="/create-survey" className="px-3 py-1 rounded-lg hover:bg-white/10">Create Survey</Link>
+                  <Link to="/admin" className="px-3 py-1 rounded-lg hover:bg-white/10">Admin</Link>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             {username ? (
               <>
-                <span className="text-sm">👋 {username}</span>
-                <button onClick={handleLogout} className="bg-white text-blue-600 px-3 py-1 rounded">Logout</button>
+                <span className="text-sm bg-white/10 px-3 py-1 rounded-full">{username}</span>
+                <button onClick={handleLogout} className="bg-white text-indigo-600 px-3 py-1 rounded-lg shadow-sm">Logout</button>
               </>
             ) : (
-              <Link to="/login" className="bg-white text-blue-600 px-3 py-1 rounded">Login</Link>
+              <Link to="/login" className="bg-white text-indigo-600 px-3 py-1 rounded-lg shadow-sm">Login</Link>
             )}
           </div>
         </div>
@@ -49,10 +54,6 @@ export default function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
-
-      <footer className="bg-gray-100 p-4 text-center text-sm text-gray-600">
-        © {new Date().getFullYear()} — Your App
-      </footer>
     </div>
   );
 }

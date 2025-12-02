@@ -16,7 +16,7 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username,
-          password, // send plain password field to match backend LoginRequest
+          password, 
         }),
       });
 
