@@ -6,7 +6,6 @@ export default function TakeSurvey() {
   const navigate = useNavigate();
   const [survey, setSurvey] = useState(null);
   const [answers, setAnswers] = useState({});
-  const [invalidIds, setInvalidIds] = useState([]);
   const username = localStorage.getItem("username") || "Anonymous";
 
   useEffect(() => {
@@ -36,61 +35,31 @@ export default function TakeSurvey() {
 
   const handleAnswer = (questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
-    // If this question was previously marked invalid and now has a value, clear it
-    setInvalidIds((prev) => prev.filter((id) => id !== questionId));
   };
 
-  function validateRequiredQuestions() {
-    const invalid = [];
-    for (const q of survey.questions) {
-      if (q.isRequired) {
-        const val = answers[q.id];
-        const answered = (() => {
-          if (q.questionType === "Text") return typeof val === "string" && val.trim() !== "";
-          if (q.questionType === "Rating") return val != null;
-          if (q.questionType === "MultipleChoice") return typeof val === "string" && val.trim() !== "";
-          return true;
-        })();
-        if (!answered) invalid.push(q.id);
-      }
-    }
-    return invalid;
-  }
-
   async function handleSubmit() {
-    // Validate required questions first
-    const invalid = validateRequiredQuestions();
-    if (invalid.length > 0) {
-      setInvalidIds(invalid);
-      // scroll to first invalid question
-      const el = document.querySelector(`[data-qid="${invalid[0]}"]`);
-      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      alert("Please answer all required questions (highlighted in red).");
-      return;
-    }
-
     // Build answers array in server format
     const answerList = survey.questions.map((q) => {
       const val = answers[q.id];
       return {
         questionId: q.id,
         answerText: q.questionType === "Text" ? (val || "") : null,
-        ratingValue: q.questionType === "Rating" ? (val ? Number(val) : null) : null,
+        ratingValue: q.questionType === "Rating" ? (val ? Number(val) : (null)) : null,
         // For multiple choice treat as answerText
-        ...(q.questionType === "MultipleChoice" ? { answerText: val || "" } : {}),
+        ...(q.questionType === "MultipleChoice" ? { answerText: val || "" } : {})
       };
     });
 
     const payload = {
       username,
-      answers: answerList,
+      answers: answerList
     };
 
     try {
       const res = await fetch(`https://localhost:7126/api/surveys/${id}/responses`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const txt = await res.text();
@@ -117,61 +86,51 @@ export default function TakeSurvey() {
       </div>
 
       <div className="space-y-6">
-        {survey.questions.map((q) => {
-          const isInvalid = invalidIds.includes(q.id);
-          return (
-            <div
-              key={q.id}
-              data-qid={q.id}
-              className={`bg-white p-4 rounded shadow ${isInvalid ? "border-2 border-red-500 bg-red-50" : ""}`}
-            >
-              <p className={`font-semibold mb-3 ${isInvalid ? "text-red-600" : ""}`}>
-                {q.questionText}
-                {q.isRequired ? <span className="ml-2 text-sm text-red-600">*</span> : null}
-              </p>
+        {survey.questions.map((q) => (
+          <div key={q.id} className="bg-white p-4 rounded shadow">
+            <p className="font-semibold mb-3">{q.questionText}</p>
 
-              {q.questionType === "Text" && (
-                <textarea
-                  className={`w-full border rounded p-2 ${isInvalid ? "border-red-400" : ""}`}
-                  rows="3"
-                  value={answers[q.id] || ""}
-                  onChange={(e) => handleAnswer(q.id, e.target.value)}
-                />
-              )}
+            {q.questionType === "Text" && (
+              <textarea
+                className="w-full border rounded p-2"
+                rows="3"
+                value={answers[q.id] || ""}
+                onChange={(e) => handleAnswer(q.id, e.target.value)}
+              />
+            )}
 
-              {q.questionType === "Rating" && (
-                <div className="flex gap-2 flex-wrap">
-                  {[...Array(10)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleAnswer(q.id, i + 1)}
-                      className={`px-3 py-1 rounded border ${answers[q.id] === i + 1 ? "bg-blue-600 text-white" : "bg-gray-100"} ${isInvalid ? "ring-2 ring-red-300" : ""}`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
+            {q.questionType === "Rating" && (
+              <div className="flex gap-2 flex-wrap">
+                {[...Array(10)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleAnswer(q.id, i + 1)}
+                    className={`px-3 py-1 rounded border ${answers[q.id] === i + 1 ? "bg-blue-600 text-white" : "bg-gray-100"}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {q.questionType === "MultipleChoice" && (
-                <div className="space-y-2">
-                  {q.options?.split(",").map((opt, idx) => (
-                    <label key={idx} className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name={`q_${q.id}`}
-                        value={opt.trim()}
-                        checked={answers[q.id] === opt.trim()}
-                        onChange={() => handleAnswer(q.id, opt.trim())}
-                      />
-                      <span>{opt.trim()}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            {q.questionType === "MultipleChoice" && (
+              <div className="space-y-2">
+                {q.options?.split(",").map((opt, idx) => (
+                  <label key={idx} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`q_${q.id}`}
+                      value={opt.trim()}
+                      checked={answers[q.id] === opt.trim()}
+                      onChange={() => handleAnswer(q.id, opt.trim())}
+                    />
+                    <span>{opt.trim()}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       <button onClick={handleSubmit} className="mt-6 bg-green-600 text-white px-6 py-2 rounded">Submit Survey</button>

@@ -8,31 +8,31 @@ export default function Login() {
   const navigate = useNavigate();
 
   async function handleLogin(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const res = await fetch("https://localhost:7126/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username,
-          password, // send plain password field to match backend LoginRequest
-        }),
-      });
+  try {
+    const res = await fetch("https://localhost:7126/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username,
+        passwordHash: password, // ✅ changed key name
+      }),
+    });
 
-      if (!res.ok) throw new Error("Invalid credentials");
-      const data = await res.json();
+    if (!res.ok) throw new Error("Invalid credentials");
+    const data = await res.json();
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("username", data.username);
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+    localStorage.setItem("username", data.username);
 
-      if (data.role === "Admin") navigate("/admin");
-      else navigate("/");
-    } catch (err) {
-      setError("Invalid username or password");
-    }
+    if (data.role === "Admin") navigate("/admin");
+    else navigate("/");
+  } catch (err) {
+    setError("Invalid username or password");
   }
+}
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
