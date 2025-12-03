@@ -129,18 +129,30 @@ export default function AdminDashboard() {
 
     // Wrap clone in a container positioned off-screen so it can be rendered
     const container = document.createElement("div");
-    container.style.position = "fixed";
+    container.style.position = "static";
     container.style.left = "-9999px";
     container.style.top = "0";
     container.style.background = "white";
     container.style.padding = "8px";
+
+    // Increase font size for export (adjust px to taste)
+    const desiredFontSize = "30px";
+    container.style.fontSize = desiredFontSize;
+    // ensure table elements use this font size (override Tailwind classes)
+    clone.querySelectorAll("th, td").forEach((el) => {
+      el.style.fontSize = desiredFontSize;
+      // optional: increase padding so larger text doesn't look cramped
+      el.style.padding = "26px";
+    });
+
     container.appendChild(clone);
     document.body.appendChild(container);
 
     try {
-      const canvas = await html2canvas(clone, { scale: 2 });
+      // Use a higher scale so text remains sharp when rasterized
+      const canvas = await html2canvas(clone, { scale: 3, useCORS: true });
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "legal");
+      const pdf = new jsPDF("p", "mm", "letter");
       const width = pdf.internal.pageSize.getWidth();
       const height = (canvas.height * width) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, width, height);
