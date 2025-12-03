@@ -48,11 +48,12 @@ export default function Layout() {
 
       <main className="flex-1">
         <Outlet />
-      </main>
-
-      <footer className="bg-gray-100 p-4 text-center text-sm text-gray-600">
-        © {new Date().getFullYear()} — Your App
-      </footer>
+          </main>
+          <footer className="bg-gray-900 text-gray-300 py-8 mt-10">
+              <div className="max-w-6xl mx-auto text-center">
+                  <p className="text-sm">© {new Date().getFullYear()} Survey Platform. All rights reserved.</p>
+              </div>
+          </footer>
     </div>
   );
 }

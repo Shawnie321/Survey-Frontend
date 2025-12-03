@@ -175,7 +175,7 @@ export default function TakeSurvey() {
       setError("Failed to submit survey. Please try again later.");
       console.error("Submit error:", err);
     } finally {
-      setLoading(false);
+      setLoading(false);    
     }
   }
 

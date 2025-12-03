@@ -80,20 +80,7 @@ export default function Home() {
             </section>
 
             {/* FOOTER */}
-            <footer className="bg-gray-900 text-gray-300 py-8 mt-10">
-                <div className="max-w-6xl mx-auto text-center">
-                    <p className="text-sm">© {new Date().getFullYear()} Survey Platform. All rights reserved.</p>
 
-                    {username && (
-                        <button
-                            onClick={handleLogout}
-                            className="mt-3 text-red-400 hover:text-red-300 underline text-sm"
-                        >
-                            Logout
-                        </button>
-                    )}
-                </div>
-            </footer>
         </div>
     );
 }
