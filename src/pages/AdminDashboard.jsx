@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import AdminHeader from "../components/AdminHeader";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -32,6 +33,7 @@ export default function AdminDashboard() {
   const [endDate, setEndDate] = useState("");
   const [filteredResponses, setFilteredResponses] = useState([]);
   const [showConfirm, setShowConfirm] = useState(null);
+  const [searchUsername, setSearchUsername] = useState("");
 
   useEffect(() => {
     if (role !== "Admin") navigate("/login");
@@ -48,18 +50,58 @@ export default function AdminDashboard() {
 
   async function viewSurvey(survey) {
     setSelected(survey);
-    const res = await fetch(`https://localhost:7126/api/surveys/${survey.id}/responses`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setResponses(data || []);
-    setFilteredResponses(data || []);
+    
+    // Debug: check if token exists
+    if (!token) {
+      console.error("No token found in localStorage");
+      alert("Authentication token missing. Please log in again.");
+      navigate("/login");
+      return;
+    }
+    
+    console.log("Token:", token.substring(0, 20) + "..."); // Log first 20 chars only
+    
+    try {
+      const res = await fetch(`https://localhost:7126/api/surveys/${survey.id}/responses`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+      });
+      if (!res.ok) {
+        console.error("Responses API error:", res.status, res.statusText);
+        if (res.status === 401) {
+          alert("Session expired. Please log in again.");
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+        alert(`Error loading responses: ${res.status}`);
+        return;
+      }
+      const data = await res.json();
+      console.log("Responses data:", data);
+      setResponses(data || []);
+      setFilteredResponses(data || []);
+    } catch (e) {
+      console.error("Error fetching responses:", e);
+      alert("Failed to load responses");
+    }
 
-    const ares = await fetch(`https://localhost:7126/api/analytics/${survey.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const aData = await ares.json();
-    setAnalytics(aData);
+    try {
+      const ares = await fetch(`https://localhost:7126/api/analytics/${survey.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!ares.ok) {
+        console.error("Analytics API error:", ares.status, ares.statusText);
+        return;
+      }
+      const aData = await ares.json();
+      console.log("Analytics data:", aData);
+      setAnalytics(aData);
+    } catch (e) {
+      console.error("Error fetching analytics:", e);
+    }
   }
 
   async function deleteSurvey(id) {
@@ -87,6 +129,18 @@ export default function AdminDashboard() {
     setFilteredResponses(responses);
     setStartDate("");
     setEndDate("");
+  }
+
+  function searchByUsername(value) {
+    setSearchUsername(value);
+    if (!value.trim()) {
+      setFilteredResponses(responses);
+    } else {
+      const searched = responses.filter((r) =>
+        (r.username || "Anonymous").toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredResponses(searched);
+    }
   }
 
   function exportToExcel() {
@@ -195,154 +249,158 @@ export default function AdminDashboard() {
     : null;
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-        <h1 className="text-4xl font-extrabold text-blue-700 tracking-tight">Admin Dashboard</h1>
-        <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-semibold shadow">👋 {username}</span>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-8">
-        {/* --- Survey List --- */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">All Surveys</h2>
-          <ul className="divide-y">
-            {surveys.map((s) => (
-              <li key={s.id} className="py-3 flex justify-between items-center">
-                <button className="text-blue-600 hover:underline font-medium text-lg" onClick={() => viewSurvey(s)}>
-                  {s.title}
-                </button>
-                <button onClick={() => deleteSurvey(s.id)} className="text-red-600 text-sm hover:underline px-2 py-1 rounded hover:bg-red-50">
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* --- Survey Details + Analytics --- */}
-        <div className="md:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-          {!selected ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <svg width="48" height="48" fill="none" viewBox="002424" stroke="currentColor" className="mb-2">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M917v-2a44000-4-4H5a44000-44v2m16-2a44000-4-4h-1a44000-44v2m6-2a44000-4-4h-1a44000-44v2" />
-              </svg>
-              <p>Select a survey to view responses.</p>
-            </div>
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold mb-2 text-blue-700">{selected.title}</h2>
-              <p className="text-gray-600 mb-4">{selected.description}</p>
-
-              {analytics && (
-                <>
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-blue-100 p-4 rounded-xl text-center shadow">
-                      <h4 className="font-semibold text-blue-700">Total</h4>
-                      <p className="text-2xl font-bold">{analytics.totalResponses}</p>
-                    </div>
-                    <div className="bg-green-100 p-4 rounded-xl text-center shadow">
-                      <h4 className="font-semibold text-green-700">Average</h4>
-                      <p className="text-2xl font-bold">{analytics.averageRating}</p>
-                    </div>
-                    <div className="bg-yellow-100 p-4 rounded-xl text-center shadow">
-                      <h4 className="font-semibold text-yellow-700">Highest</h4>
-                      <p className="text-2xl font-bold">{analytics.highestRating}</p>
-                    </div>
-                    <div className="bg-red-100 p-4 rounded-xl text-center shadow">
-                      <h4 className="font-semibold text-red-700">Lowest</h4>
-                      <p className="text-2xl font-bold">{analytics.lowestRating}</p>
-                    </div>
-                  </div>
-
-                  {/* Chart */}
-                  {chartData && (
-                    <div className="bg-gray-50 p-6 rounded-xl shadow mb-8">
-                      <Bar data={chartData} />
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Filter + Export */}
-              <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-                <div className="flex gap-2 items-center">
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" />
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" />
-                  <button onClick={filterResponses} className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">
-                    Filter
+    <>
+      <AdminHeader username={username} currentPage="dashboard" />
+      <div className="max-w-7xl mx-auto p-6 space-y-8">
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* --- Survey List --- */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">All Surveys</h2>
+            <ul className="divide-y">
+              {surveys.map((s) => (
+                <li key={s.id} className="py-3 flex justify-between items-center">
+                  <button className="text-blue-600 hover:underline font-medium text-lg" onClick={() => viewSurvey(s)}>
+                    {s.title}
                   </button>
-                  <button onClick={resetFilter} className="bg-gray-300 px-4 py-2 rounded shadow hover:bg-gray-400">
-                    Reset
+                  <button onClick={() => deleteSurvey(s.id)} className="text-red-600 text-sm hover:underline px-2 py-1 rounded hover:bg-red-50">
+                    Delete
                   </button>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={exportToExcel} className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
-                    Excel
-                  </button>
-                  <button onClick={exportToPDF} className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
-                    PDF
-                  </button>
-                </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* --- Survey Details + Analytics --- */}
+          <div className="md:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            {!selected ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <svg width="48" height="48" fill="none" viewBox="002424" stroke="currentColor" className="mb-2">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M917v-2a44000-4-4H5a44000-44v2m16-2a44000-4-4h-1a44000-44v2m6-2a44000-4-4h-1a44000-44v2" />
+                </svg>
+                <p>Select a survey to view responses.</p>
               </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold mb-2 text-blue-700">{selected.title}</h2>
+                <p className="text-gray-600 mb-4">{selected.description}</p>
 
-              {/* --- Responses Table --- */}
-              <div className="overflow-x-auto rounded-xl shadow border border-gray-200">
-                <table id="responsesTable" className="min-w-full border-collapse text-sm">
-                  <thead className="bg-blue-600 text-white">
-                    <tr>
-                      <th className="p-3 border">ID</th>
-                      <th className="p-3 border">User</th>
-                      <th className="p-3 border">Submitted</th>
-                      <th className="p-3 border">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredResponses.length ? (
-                      filteredResponses.map((r) => (
-                        <tr key={r.id} className="hover:bg-gray-50 text-center">
-                          <td className="border p-3">{r.id}</td>
-                          <td className="border p-3">{r.username || "Anonymous"}</td>
-                          <td className="border p-3">{new Date(r.submittedAt).toLocaleString()}</td>
-                          <td className="border p-3">
-                            <button onClick={() => setShowConfirm(r.id)} className="text-red-600 mx-1 px-2 py-1 rounded hover:bg-red-50">
-                              🗑️ Delete
-                            </button>
+                {analytics && (
+                  <>
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-blue-100 p-4 rounded-xl text-center shadow">
+                        <h4 className="font-semibold text-blue-700">Total</h4>
+                        <p className="text-2xl font-bold">{analytics.totalResponses}</p>
+                      </div>
+                      <div className="bg-green-100 p-4 rounded-xl text-center shadow">
+                        <h4 className="font-semibold text-green-700">Average</h4>
+                        <p className="text-2xl font-bold">{analytics.averageRating}</p>
+                      </div>
+                      <div className="bg-yellow-100 p-4 rounded-xl text-center shadow">
+                        <h4 className="font-semibold text-yellow-700">Highest</h4>
+                        <p className="text-2xl font-bold">{analytics.highestRating}</p>
+                      </div>
+                      <div className="bg-red-100 p-4 rounded-xl text-center shadow">
+                        <h4 className="font-semibold text-red-700">Lowest</h4>
+                        <p className="text-2xl font-bold">{analytics.lowestRating}</p>
+                      </div>
+                    </div>
+
+                    {/* Chart */}
+                    {chartData && (
+                      <div className="bg-gray-50 p-6 rounded-xl shadow mb-8">
+                        <Bar data={chartData} />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Filter + Export + Search */}
+                <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+                  <div className="flex gap-2 items-center">
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                    <button onClick={filterResponses} className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">
+                      Filter
+                    </button>
+                    <button onClick={resetFilter} className="bg-gray-300 px-4 py-2 rounded shadow hover:bg-gray-400">
+                      Reset
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Search username..." 
+                      value={searchUsername}
+                      onChange={(e) => searchByUsername(e.target.value)}
+                      className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button onClick={exportToExcel} className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
+                      Excel
+                    </button>
+                    <button onClick={exportToPDF} className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
+                      PDF
+                    </button>
+                  </div>
+                </div>
+
+                {/* --- Responses Table --- */}
+                <div className="rounded-xl shadow border border-gray-200" style={{ maxHeight: "500px", overflowY: "auto" }}>
+                  <table id="responsesTable" className="min-w-full border-collapse text-sm">
+                    <thead className="bg-blue-600 text-white sticky top-0">
+                      <tr>
+                        <th className="p-3 border">ID</th>
+                        <th className="p-3 border">User</th>
+                        <th className="p-3 border">Submitted</th>
+                        <th className="p-3 border">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredResponses.length ? (
+                        filteredResponses.map((r) => (
+                          <tr key={r.id} className="hover:bg-gray-50 text-center">
+                            <td className="border p-3">{r.id}</td>
+                            <td className="border p-3">{r.username || "Anonymous"}</td>
+                            <td className="border p-3">{new Date(r.submittedAt).toLocaleString()}</td>
+                            <td className="border p-3">
+                              <button onClick={() => setShowConfirm(r.id)} className="text-red-600 mx-1 px-2 py-1 rounded hover:bg-red-50">
+                                🗑️ Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4" className="text-center p-4 text-gray-500">
+                            No responses found.
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="6" className="text-center p-4 text-gray-500">
-                          No responses found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* --- Delete Confirmation --- */}
-      {showConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-            <h3 className="text-xl font-bold mb-6 text-red-600">Delete this response?</h3>
-            <div className="flex justify-end gap-4">
-              <button onClick={() => setShowConfirm(null)} className="px-4 py-2 bg-gray-300 rounded shadow hover:bg-gray-400">
-                Cancel
-              </button>
-              <button onClick={() => deleteResponse(showConfirm)} className="px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700">
-                Delete
-              </button>
-            </div>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         </div>
-      )}
-    </div>
+
+        {/* --- Delete Confirmation --- */}
+        {showConfirm && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+            <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+              <h3 className="text-xl font-bold mb-6 text-red-600">Delete this response?</h3>
+              <div className="flex justify-end gap-4">
+                <button onClick={() => setShowConfirm(null)} className="px-4 py-2 bg-gray-300 rounded shadow hover:bg-gray-400">
+                  Cancel
+                </button>
+                <button onClick={() => deleteResponse(showConfirm)} className="px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
