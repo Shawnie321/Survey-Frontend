@@ -165,12 +165,203 @@ export default function AdminDashboard() {
     async function exportToPDF() {
         const table = document.getElementById("responsesTable");
         if (!table) return alert("Table not found!");
-        const canvas = await html2canvas(table, { scale: 2 });
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (canvas.height * width) / canvas.width;
-        pdf.addImage(imgData, "PNG", 0, 0, width, height);
+
+        // Clone table and remove Actions column from the clone
+        const clone = table.cloneNode(true);
+        // --- FIXED HEADER HEIGHT ---
+        // Force stable header height so it is never cut in half
+        const fixedHeaderHeight = 50; // adjust (px) depending on your styling
+        clone.querySelectorAll("thead th").forEach((th) => {
+            th.style.height = fixedHeaderHeight + "px";
+            th.style.minHeight = fixedHeaderHeight + "px";
+            th.style.maxHeight = fixedHeaderHeight + "px";
+            th.style.lineHeight = fixedHeaderHeight + "px";
+        });
+        clone.querySelector("thead").style.display = "table-header-group";
+        clone.querySelector("thead").style.background = "#2563eb"; // match your blue header
+        clone.querySelector("thead").style.color = "white";
+
+        // Find actions column index
+        const headerCells = clone.querySelectorAll("thead th");
+        let actionsIndex = -1;
+        headerCells.forEach((th, i) => {
+            const txt = (th.textContent || "").trim().toLowerCase();
+            if (txt.includes("action")) actionsIndex = i;
+        });
+        if (actionsIndex === -1 && headerCells.length > 0) actionsIndex = headerCells.length - 1;
+
+        // Compute original column widths from on-screen table (so clone uses same widths)
+        const originalHeaderCells = table.querySelectorAll("thead th");
+        const colWidths = Array.from(originalHeaderCells).map((th) => {
+            const w = th.getBoundingClientRect().width;
+            return Math.round(w);
+        });
+
+        // Apply fixed table layout + explicit widths to clone so header aligns with body
+        clone.style.tableLayout = "fixed";
+        clone.style.width = `${table.getBoundingClientRect().width}px`;
+        clone.style.borderCollapse = "collapse";
+
+        // Insert colgroup with widths to force stable column sizing
+        const colgroup = document.createElement("colgroup");
+        colWidths.forEach((w, i) => {
+            if (i === actionsIndex) return; // skip actions column
+            const col = document.createElement("col");
+            col.style.width = `${w}px`;
+            colgroup.appendChild(col);
+        });
+        // Remove existing colgroup if any then add ours at the top
+        const existingColgroup = clone.querySelector("colgroup");
+        if (existingColgroup) existingColgroup.remove();
+        clone.insertBefore(colgroup, clone.firstChild);
+
+        // Remove Actions column header and body cells, also apply widths to th/td
+        const clonedHeaderCells = clone.querySelectorAll("thead th");
+        let colPos = 0;
+        clonedHeaderCells.forEach((th, i) => {
+            if (i === actionsIndex) {
+                th.remove();
+                return;
+            }
+            // apply width from colWidths array (skip removed index)
+            const w = colWidths[i];
+            if (w) th.style.width = `${w}px`;
+            th.style.boxSizing = "border-box";
+            colPos++;
+        });
+
+        clone.querySelectorAll("tbody tr").forEach((tr) => {
+            const tds = Array.from(tr.querySelectorAll("td"));
+            let tdPos = 0;
+            tds.forEach((td, i) => {
+                if (i === actionsIndex) {
+                    td.remove();
+                    return;
+                }
+                const w = colWidths[i];
+                if (w) td.style.width = `${w}px`;
+                td.style.boxSizing = "border-box";
+                tdPos++;
+            });
+        });
+
+        // Wrap clone so styles render correctly and append off-screen
+        const wrapper = document.createElement("div");
+        wrapper.style.background = "#ffffff";
+        wrapper.style.padding = "16px";
+        const container = table.parentElement;
+        const containerWidth = container ? container.clientWidth : table.clientWidth;
+        wrapper.style.width = `${containerWidth}px`;
+        clone.style.width = "100%";
+        wrapper.appendChild(clone);
+        wrapper.style.position = "fixed";
+        wrapper.style.left = "-10000px";
+        wrapper.style.top = "0";
+        document.body.appendChild(wrapper);
+
+        // measure header and row positions AFTER clone is in DOM
+        const headerEl = wrapper.querySelector("thead");
+        const headerRect = headerEl ? headerEl.getBoundingClientRect() : { height: 0, top: wrapper.getBoundingClientRect().top };
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const rowEls = Array.from(wrapper.querySelectorAll("tbody tr"));
+        const rowRects = rowEls.map((tr) => {
+            const r = tr.getBoundingClientRect();
+            return {
+                top: r.top - wrapperRect.top,
+                height: r.height,
+            };
+        });
+
+        // Render the wrapper to a canvas at high resolution
+        const scale = 2;
+        const canvas = await html2canvas(wrapper, { scale, useCORS: true, backgroundColor: "#ffffff" });
+
+        // remove temporary wrapper
+        document.body.removeChild(wrapper);
+
+        const pdf = new jsPDF("p", "mm", "letter");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        // Calculate pixels per mm for slicing (canvas px = DOM px * scale)
+        const imgWidthPx = canvas.width;
+        const imgHeightPx = canvas.height;
+        const pxPerMm = imgWidthPx / pdfWidth;
+        const sliceHeightPx = Math.floor(pdfHeight * pxPerMm);
+
+        // header in canvas px
+        const headerHeightPx = Math.round((headerRect.height || 0) * scale);
+
+        // Build pages by grouping whole rows so no row is split across pages
+        const pages = [];
+        let startIdx = 0;
+        while (startIdx < rowRects.length) {
+            let available = sliceHeightPx - headerHeightPx;
+            if (available < 0) available = 0;
+
+            let endIdx = startIdx;
+            while (endIdx < rowRects.length) {
+                const rowTopPx = Math.round(rowRects[endIdx].top * scale);
+                const rowHeightPx = Math.round(rowRects[endIdx].height * scale);
+
+                const firstRowTopPx = Math.round(rowRects[startIdx].top * scale);
+                const relTop = rowTopPx - firstRowTopPx;
+                const wouldBeHeight = relTop + rowHeightPx;
+
+                if (wouldBeHeight > available && endIdx > startIdx) break;
+
+                endIdx++;
+            }
+
+            // if no row fits (single row too tall), force at least one row per page
+            if (endIdx === startIdx) endIdx = startIdx + 1;
+
+            pages.push({ startIdx, endIdx }); // endIdx is exclusive
+            startIdx = endIdx;
+        }
+
+        // Now render each page: header + rows block
+        for (let p = 0; p < pages.length; p++) {
+            const { startIdx: s, endIdx: e } = pages[p];
+            const firstRowTopPx = Math.round(rowRects[s].top * scale);
+            const lastRow = rowRects[e - 1];
+            const lastRowBottomPx = Math.round((lastRow.top + lastRow.height) * scale);
+            const rowsBlockHeightPx = lastRowBottomPx - firstRowTopPx;
+
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = imgWidthPx;
+            pageCanvas.height = headerHeightPx + rowsBlockHeightPx;
+            const ctx = pageCanvas.getContext("2d");
+
+            // white bg
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+            // draw header from top of original canvas
+            if (headerHeightPx > 0) {
+                ctx.drawImage(canvas, 0, 0, imgWidthPx, headerHeightPx, 0, 0, pageCanvas.width, headerHeightPx);
+            }
+
+            // draw rows block
+            ctx.drawImage(
+                canvas,
+                0,
+                firstRowTopPx,
+                imgWidthPx,
+                rowsBlockHeightPx,
+                0,
+                headerHeightPx,
+                pageCanvas.width,
+                rowsBlockHeightPx
+            );
+
+            const pageData = pageCanvas.toDataURL("image/png");
+            const pageImgHeightMm = (pageCanvas.height * pdfWidth) / pageCanvas.width;
+
+            pdf.addImage(pageData, "PNG", 0, 0, pdfWidth, pageImgHeightMm);
+            if (p < pages.length - 1) pdf.addPage();
+        }
+
         pdf.save(`${selected?.title || "Survey"}_Responses.pdf`);
     }
 
@@ -349,7 +540,7 @@ export default function AdminDashboard() {
                                     style={{ maxHeight: "500px", overflowY: "auto" }}
                                 >
                                     <table id="responsesTable" className="min-w-full border-collapse text-sm">
-                                        <thead className="bg-blue-600 text-white sticky top-0">
+                                        <thead className="bg-blue-600 text-white top-0">
                                             <tr>
                                                 <th className="p-3 border">ID</th>
                                                 <th className="p-3 border">User</th>
