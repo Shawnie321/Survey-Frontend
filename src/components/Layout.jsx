@@ -13,39 +13,72 @@ export default function Layout() {
   }, []);
 
   function handleLogout() {
-    localStorage.clear();
+    // Remove only authentication keys so other data (e.g. survey_<id>_<username>) stays
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
     navigate("/login");
   }
 
   // Hide navigation bar for /admin and /edit-survey/:id routes
-  const hideNav = location.pathname === "/admin" || location.pathname.startsWith("/edit-survey");
+  const hideNav =
+    location.pathname === "/admin" ||
+    location.pathname.startsWith("/edit-survey") ||
+    location.pathname.startsWith("/create-survey");
+
+  const current = location.pathname;
+  function navClass(path, exact = false) {
+    if (exact) return current === path ? "font-semibold" : "";
+    return current.startsWith(path) ? "font-semibold" : "";
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
       {!hideNav && (
-        <nav className="bg-blue-600 text-white p-4">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
+        <nav className="bg-blue-600 text-white">
+          {/* full-width bar so items can sit at the viewport edges */}
+          <div className="w-full flex items-center px-6 py-4">
+            {/* left-aligned nav links (flush left) */}
             <div className="flex items-center gap-6">
-              <Link to="/" className="font-semibold hover:underline">Home</Link>
-              <Link to="/About" className="hover:underline">About</Link>
-              <Link to="/services" className="hover:underline">Services</Link>
-              <Link to="/surveys" className="hover:underline">Surveys</Link>
+              <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
+
+              </Link>
+              <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
+
+              </Link>
+              <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
+
+              </Link>
+              <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
+                Home
+              </Link>
+              <Link to="/About" className={`hover:underline ${navClass("/About", true)}`}>
+                About
+              </Link>
+              <Link to="/services" className={`hover:underline ${navClass("/services", true)}`}>
+                Services
+              </Link>
+              <Link to="/surveys" className={`hover:underline ${navClass("/surveys", true)}`}>
+                Surveys
+              </Link>
               {role === "Admin" && (
-                <>
-                  {/* <Link to="/create-survey" className="hover:underline">Create Survey</Link> */}
-                  <Link to="/admin" className="hover:underline">Admin</Link>
-                </>
+                <Link to="/admin" className={`hover:underline ${navClass("/admin")}`}>
+                  Admin
+                </Link>
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* push login/logout to the far right */}
+            <div className="flex items-center gap-3 ml-auto mr-4">
               {username ? (
                 <>
                   <span className="text-sm">👋 {username}</span>
                   <button onClick={handleLogout} className="bg-white text-blue-600 px-3 py-1 rounded">Logout</button>
                 </>
               ) : (
-                <Link to="/login" className="bg-white text-blue-600 px-3 py-1 rounded">Login</Link>
+                <Link to="/login" className={`bg-white text-blue-600 px-3 py-1 rounded ${navClass("/login", true)}`}>
+                  Login
+                </Link>
               )}
             </div>
           </div>

@@ -7,31 +7,31 @@ export default function Services() {
         </h2>
         <div className="grid gap-6">
           <div className="bg-blue-100 rounded-xl p-6 shadow flex flex-col items-center">
-            <span className="text-2xl font-bold text-blue-600 mb-2">
+            <span className="text-2xl font-bold mb-2">
               Personal Training
             </span>
             <p className="text-gray-700 text-center">
               One-on-one coaching tailored to your goals and fitness level.
             </p>
           </div>
-          <div className="bg-green-100 rounded-xl p-6 shadow flex flex-col items-center">
-            <span className="text-2xl font-bold text-green-600 mb-2">
+          <div className="bg-blue-100 rounded-xl p-6 shadow flex flex-col items-center">
+            <span className="text-2xl font-bold mb-2">
               Group Classes
             </span>
             <p className="text-gray-700 text-center">
               Fun, motivating group workouts for all skill levels.
             </p>
           </div>
-          <div className="bg-yellow-50 rounded-xl p-6 shadow flex flex-col items-center">
-            <span className="text-2xl font-bold text-yellow-600 mb-2">
+            <div className="bg-blue-100 rounded-xl p-6 shadow flex flex-col items-center">
+            <span className="text-2xl font-bold mb-2">
               Nutrition Counseling
             </span>
             <p className="text-gray-700 text-center">
               Personalized nutrition plans and expert advice.
             </p>
           </div>
-          <div className="bg-purple-100 rounded-xl p-6 shadow flex flex-col items-center">
-            <span className="text-2xl font-bold text-purple-600 mb-2">
+             <div className="bg-blue-100 rounded-xl p-6 shadow flex flex-col items-center">
+            <span className="text-2xl font-bold mb-2">
               Strength & Conditioning
             </span>
             <p className="text-gray-700 text-center">

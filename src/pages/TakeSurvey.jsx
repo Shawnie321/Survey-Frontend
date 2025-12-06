@@ -1,15 +1,25 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 export default function TakeSurvey() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [survey, setSurvey] = useState(null);
     const [answers, setAnswers] = useState({});
     const [invalidIds, setInvalidIds] = useState([]);
     const [consent, setConsent] = useState(false);
     const [error, setError] = useState("");
+    const [isReview, setIsReview] = useState(false);
+    const [reviewResponse, setReviewResponse] = useState(null);
+    const [reviewAnswers, setReviewAnswers] = useState(null); // map questionId -> string
     const username = localStorage.getItem("username") || "Anonymous";
+    const token = localStorage.getItem("token");
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get("review") === "true") setIsReview(true);
+    }, [location.search]);
 
     // Identify and exclude the survey question that duplicates the consent checkbox.
     // Adjust this check if your backend uses a different wording.
@@ -30,12 +40,100 @@ export default function TakeSurvey() {
                 if (!res.ok) throw new Error("Failed to load survey");
                 const data = await res.json();
                 setSurvey(data);
+
+                // Check skip flag (set when user requests a retake) — prevents auto review detection
+                const skipKey = `skip_review_${id}`;
+                const skip = sessionStorage.getItem(skipKey) === "1";
+                if (skip) {
+                    sessionStorage.removeItem(skipKey);
+                    // intentionally do not auto-enter review mode
+                    return;
+                }
+
+                // If review already forced, still try to fetch answers for display
+                if (isReview) {
+                    // Try answers endpoint first
+                    if (token) {
+                        try {
+                            const ansRes = await fetch(`https://localhost:7126/api/surveys/${id}/responses/user/me/answers`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                            });
+                            if (ansRes.ok) {
+                                const ansData = await ansRes.json();
+                                const map = {};
+                                (ansData || []).forEach(a => {
+                                    if (!a) return;
+                                    const qid = String(a.questionId ?? a.questionId);
+                                    const val = a.answerText ?? (a.ratingValue != null ? String(a.ratingValue) : "");
+                                    map[qid] = val;
+                                });
+                                setReviewAnswers(map);
+                                return;
+                            }
+                        } catch (e) {
+                            console.error("Error fetching answers endpoint:", e);
+                        }
+                    }
+
+                    // fallback: fetch all responses
+                    try {
+                        const rres = await fetch(`https://localhost:7126/api/surveys/${id}/responses`);
+                        if (rres.ok) {
+                            const rdata = await rres.json();
+                            const match = (rdata || []).reverse().find(r => (r.username || "Anonymous") === username);
+                            setReviewResponse(match || null);
+                            if (match && match.answers) {
+                                const map = {};
+                                (match.answers || []).forEach(a => {
+                                    const qid = String(a.questionId ?? a.questionId);
+                                    const val = a.answerText ?? (a.ratingValue != null ? String(a.ratingValue) : "");
+                                    map[qid] = val;
+                                });
+                                setReviewAnswers(map);
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Error fetching responses:", e);
+                    }
+                } else {
+                    // If not already in review and token present, optionally check server for existing answers to auto-set review
+                    if (token) {
+                        try {
+                            const checkRes = await fetch(`https://localhost:7126/api/surveys/${id}/responses/user/me/answers`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                            });
+                            if (checkRes.ok) {
+                                const checkData = await checkRes.json();
+                                if (Array.isArray(checkData) && checkData.length > 0) {
+                                    const map = {};
+                                    checkData.forEach((a) => {
+                                        const qid = String(a.questionId ?? a.questionId);
+                                        const val = a.answerText ?? (a.ratingValue != null ? String(a.ratingValue) : "");
+                                        map[qid] = val;
+                                    });
+                                    setReviewAnswers(map);
+                                    setIsReview(true);
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Error checking existing answers:", e);
+                        }
+                    } else {
+                        // Fallback to localStorage flag
+                        const completedKey = `survey_${id}_${localStorage.getItem("username") || "Anonymous"}`;
+                        const completed = localStorage.getItem(completedKey);
+                        if (completed) {
+                            setIsReview(true);
+                        }
+                    }
+                }
             } catch (err) {
                 console.error("Error fetching survey:", err);
             }
         }
         load();
-    }, [id]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, token, username, isReview]);
 
     if (!survey) return <div className="p-8 text-center">Loading survey...</div>;
 
@@ -57,7 +155,7 @@ export default function TakeSurvey() {
         setInvalidIds((prev) => prev.filter((id) => id !== questionId));
     };
 
-    function validateRequiredQuestions() {
+    function _validateRequiredQuestions() {
         const invalid = [];
         for (const q of visibleQuestions) {
             if (q.isRequired) {
@@ -76,6 +174,14 @@ export default function TakeSurvey() {
 
     async function handleSubmit(e) {
         e.preventDefault();
+
+        // Validate required questions first
+        const invalid = _validateRequiredQuestions();
+        if (invalid.length > 0) {
+            setInvalidIds(invalid);
+            setError("You must answer all required question/s");
+            return;
+        }
 
         if (!consent) {
             setError("You must give consent to submit this survey.");
@@ -114,6 +220,82 @@ export default function TakeSurvey() {
         } catch (err) {
             setError(err?.message || "Submission failed");
         }
+    }
+
+    function getReviewValue(q) {
+        // prefer answers-only map if available (keys normalized to strings)
+        const qKey = String(q.id ?? q.questionId ?? "");
+        if (reviewAnswers && qKey in reviewAnswers) return reviewAnswers[qKey];
+
+        // fallback to reviewResponse.answers (normalize ids to strings)
+        if (reviewResponse?.answers?.length) {
+            // try match by questionId
+            const byId = reviewResponse.answers.find(a => String(a.questionId) === qKey);
+            if (byId) return byId.answerText ?? (byId.ratingValue != null ? String(byId.ratingValue) : "");
+
+            // fallback: try match by questionText (less ideal but helps if ids differ)
+            const byText = reviewResponse.answers.find(a => {
+              // some backends include questionText in the answer DTO; try that first
+              if (a.questionText && typeof a.questionText === 'string') {
+                return a.questionText.trim() === (q.questionText || "").trim();
+              }
+              return false;
+            });
+            if (byText) return byText.answerText ?? (byText.ratingValue != null ? String(byText.ratingValue) : "");
+        }
+
+        // nothing found
+        console.debug("No review answer found for question", { q, reviewAnswers, reviewResponse });
+        return "(no answer found)";
+    }
+
+    // Retake handler: clear local and in-memory state and prevent immediate re-entering review by server check
+    function handleRetake() {
+        const completedKey = `survey_${id}_${username}`;
+        localStorage.removeItem(completedKey);
+
+        // set skip flag so the load effect won't auto-detect a stored server response for this view
+        sessionStorage.setItem(`skip_review_${id}`, "1");
+
+        // clear local UI state
+        setIsReview(false);
+        setReviewAnswers(null);
+        setReviewResponse(null);
+        setAnswers({});
+        setInvalidIds([]);
+        setConsent(false);
+        setError("");
+
+        // navigate to the survey page without review query
+        navigate(`/survey/${id}`);
+    }
+
+    // If review mode, render a read-only view of the user's answers
+    if (isReview) {
+        return (
+            <div className="max-w-4xl mx-auto p-6">
+                <h1 className="text-3xl font-bold mb-3"> Your Answers in '{survey.title}' Survey</h1>
+                <p className="text-gray-600 mb-6">You have already completed this survey. Below are your answers.</p>
+
+                <div className="space-y-4">
+                    {visibleQuestions.map((q) => {
+                        const value = getReviewValue(q);
+
+                        return (
+                            <div key={q.id} className="bg-white p-4 rounded shadow">
+                                <p className="font-semibold mb-2">{q.questionText}</p>
+                                <p className="text-gray-700">{value}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                    <button onClick={() => navigate('/surveys')} className="bg-gray-200 px-4 py-2 rounded">Back to Surveys</button>
+                    <button onClick={handleRetake} className="bg-blue-600 text-white px-4 py-2 rounded">Retake Survey</button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -156,6 +338,7 @@ export default function TakeSurvey() {
                                     {[...Array(10)].map((_, i) => (
                                         <button
                                             key={i}
+                                            type="button"
                                             onClick={() => handleAnswer(q.id, i + 1)}
                                             className={`px-3 py-1 rounded border ${answers[q.id] === i + 1 ? "bg-blue-600 text-white" : "bg-gray-100"} ${isInvalid ? "ring-2 ring-red-300" : ""}`}
                                         >

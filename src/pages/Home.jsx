@@ -5,6 +5,7 @@ export default function Home() {
     const role = localStorage.getItem("role");
     const navigate = useNavigate();
 
+    // eslint-disable-next-line no-unused-vars
     function handleLogout() {
         localStorage.clear();
         navigate("/login");

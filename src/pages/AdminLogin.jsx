@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "https://localhost:7126";
@@ -69,7 +69,14 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+          {/* Back button positioned at the upper-left corner */}
+          <button
+              onClick={() => navigate('/')}
+              className="absolute top-4 left-4 text-gray-800 px-3 py-2 rounded hover:bg-gray-200 z-50"
+          >
+              ← Back to Home
+          </button>
       <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-80 space-y-4">
         <h2 className="text-xl font-semibold text-center">Admin Login</h2>
         {error && <div className="text-red-600 text-sm">{error}</div>}

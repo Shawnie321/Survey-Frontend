@@ -19,16 +19,19 @@ export default function AdminHeader({ username, currentPage = "dashboard" }) {
 
   return (
     <header className="bg-blue-600 text-white shadow-lg sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Left: Logo/Company Name */}
-        <div className="text-2xl font-extrabold tracking-wider">Sirbey</div>
+      {/* make a relative container so we can place left and right items at viewport edges */}
+      <div className="relative w-full">
+        {/* centered spacer to maintain vertical height */}
+        <div className="max-w-7xl mx-auto px-6 py-8" />
 
-        {/* Middle: Spacer */}
-        <div className="flex-1"></div>
+        {/* Left: Logo placed at far left of viewport */}
+        <div className="absolute left-6 top-1/2 transform -translate-y-1/2 text-3xl font-extrabold tracking-wider">
+          Admin Dashboard
+        </div>
 
-        {/* Right: User + Hamburger Menu */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold">👋 {username}</span>
+        {/* Right: User + Hamburger Menu placed at far right */}
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-3">
+          <span className="text-l font-semibold">👋 {username}</span>
 
           {/* Hamburger Menu Button */}
           <button
@@ -59,10 +62,16 @@ export default function AdminHeader({ username, currentPage = "dashboard" }) {
                 📊 Back to Dashboard
               </button>
             )}
+            <button
+                onClick={() => handleNavigate("/surveys")}
+                className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
+            >
+                📋 Surveys
+            </button>
             <hr className="my-1" />
             <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 transition font-medium flex items-center gap-2"
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 transition font-medium flex items-center gap-2"
             >
               🚪 Logout
             </button>

@@ -1,15 +1,90 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function SurveyList() {
   const [surveys, setSurveys] = useState([]);
+  const [completedIds, setCompletedIds] = useState(new Set());
   const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("https://localhost:7126/api/surveys")
+    if (!username) return; // don't fetch when not logged in
+
+    fetch("https://localhost:7126/api/surveys", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((res) => res.json())
-      .then((data) => setSurveys(data));
-  }, []);
+      .then((data) => setSurveys(data))
+      .catch(console.error);
+  }, [username, token]);
+
+  // Server-backed completed-check: try a dedicated endpoint, fall back gracefully.
+  useEffect(() => {
+    if (!token) return; // only query server when authenticated
+
+    async function loadCompleted() {
+      try {
+        // Preferred endpoint - adjust if your backend exposes a different path
+        const primary = await fetch("https://localhost:7126/api/users/me/completed-surveys", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (primary.ok) {
+          const ids = await primary.json();
+          setCompletedIds(new Set((ids || []).map((id) => String(id))));
+          return;
+        }
+
+        // Fallback endpoint (alternative backend naming)
+        const alt = await fetch("https://localhost:7126/api/surveys/completed", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (alt.ok) {
+          const ids = await alt.json();
+          setCompletedIds(new Set((ids || []).map((id) => String(id))));
+          return;
+        }
+
+        // If neither endpoint exists, just warn and keep client-side markers
+        console.warn("Completed surveys endpoint not found (checked /users/me/completed-surveys and /surveys/completed).");
+      } catch (e) {
+        console.error("Error loading completed surveys:", e);
+      }
+    }
+
+    loadCompleted();
+  }, [token]);
+
+  if (!username) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center">
+        <div className="max-w-2xl mx-auto text-center bg-white p-8 rounded-2xl shadow">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">
+            Please log in to view surveys
+          </h1>
+          <p className="text-gray-600 mb-6">
+            You must be signed in to access available surveys. Create an account or
+            log in to continue.
+          </p>
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={() => navigate("/login")}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Login
+            </button>
+            <Link
+              to="/register"
+              className="bg-gray-100 text-gray-800 px-4 py-2 rounded"
+            >
+              Register
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
@@ -20,9 +95,11 @@ export default function SurveyList() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {surveys.map((survey) => {
-            const completed = localStorage.getItem(
-              `survey_${survey.id}_${username}`
-            );
+            const idKey = String(survey.id);
+            // server-backed completed takes precedence; fallback to client marker
+            const completedServer = completedIds.has(idKey);
+            const completedClient = localStorage.getItem(`survey_${survey.id}_${username}`);
+            const completed = completedServer || !!completedClient;
 
             return (
               <div
@@ -47,7 +124,7 @@ export default function SurveyList() {
                   )}
 
                   <Link
-                    to={`/survey/${survey.id}`}
+                    to={completed ? `/survey/${survey.id}?review=true` : `/survey/${survey.id}`}
                     className={`px-5 py-2 rounded-full font-semibold shadow transition ${
                       completed
                         ? "bg-gray-300 text-gray-700 hover:bg-gray-400"
