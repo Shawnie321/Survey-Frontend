@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
-export default function AdminHeader({ username, currentPage = "dashboard" }) {
+export default function AdminHeader({ username }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   function handleLogout() {
@@ -16,6 +17,12 @@ export default function AdminHeader({ username, currentPage = "dashboard" }) {
     setMenuOpen(false);
     navigate(path);
   }
+
+  // Determine if on survey list, create survey, or edit survey page
+  const onSurveyList = location.pathname === "/surveys";
+  const onDashboard = location.pathname === "/admin";
+  const onCreateSurvey = location.pathname === "/create-survey";
+  const onEditSurvey = location.pathname.startsWith("/edit-survey");
 
   return (
     <header className="bg-blue-600 text-white shadow-lg sticky top-0 z-40">
@@ -47,14 +54,15 @@ export default function AdminHeader({ username, currentPage = "dashboard" }) {
         {/* Dropdown Menu */}
         {menuOpen && (
           <div className="absolute top-16 right-6 bg-white text-gray-800 rounded-lg shadow-xl w-48 py-2 z-50">
-            {currentPage === "dashboard" ? (
+            {onDashboard && (
               <button
                 onClick={() => handleNavigate("/create-survey")}
                 className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
               >
                 ➕ Create Survey
               </button>
-            ) : (
+            )}
+            {(onSurveyList || onCreateSurvey || onEditSurvey) && (
               <button
                 onClick={() => handleNavigate("/admin")}
                 className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
@@ -63,15 +71,15 @@ export default function AdminHeader({ username, currentPage = "dashboard" }) {
               </button>
             )}
             <button
-                onClick={() => handleNavigate("/surveys")}
-                className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
+              onClick={() => handleNavigate("/surveys")}
+              className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
             >
-                📋 Surveys
+              📋 Surveys
             </button>
             <hr className="my-1" />
             <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 transition font-medium flex items-center gap-2"
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 transition font-medium flex items-center gap-2"
             >
               🚪 Logout
             </button>

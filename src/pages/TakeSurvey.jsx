@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import AdminHeader from "../components/AdminHeader";
 
 export default function TakeSurvey() {
     const { id } = useParams();
@@ -15,6 +16,7 @@ export default function TakeSurvey() {
     const [reviewAnswers, setReviewAnswers] = useState(null); // map questionId -> string
     const username = localStorage.getItem("username") || "Anonymous";
     const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -140,12 +142,18 @@ export default function TakeSurvey() {
     // Use only visibleQuestions (exclude consent-duplicate question)
     const visibleQuestions = survey.questions.filter((q) => !isConsentQuestion(q));
 
+    // Helper: Render AdminHeader only for admin
+    const AdminHeaderIfAdmin = role === "Admin" ? <AdminHeader username={username} /> : null;
+
     if (!visibleQuestions || visibleQuestions.length === 0) {
         return (
+            <>
+            {AdminHeaderIfAdmin}
             <div className="max-w-3xl mx-auto p-8 text-center">
                 <h2 className="text-xl font-semibold">This survey has no questions yet.</h2>
                 <p className="mt-2 text-gray-600">If you are the admin, please add questions.</p>
             </div>
+            </>
         );
     }
 
@@ -273,6 +281,8 @@ export default function TakeSurvey() {
     // If review mode, render a read-only view of the user's answers
     if (isReview) {
         return (
+            <>
+            {AdminHeaderIfAdmin}
             <div className="max-w-4xl mx-auto p-6">
                 <h1 className="text-3xl font-bold mb-3"> Your Answers in '{survey.title}' Survey</h1>
                 <p className="text-gray-600 mb-6">You have already completed this survey. Below are your answers.</p>
@@ -295,10 +305,13 @@ export default function TakeSurvey() {
                     <button onClick={handleRetake} className="bg-blue-600 text-white px-4 py-2 rounded">Retake Survey</button>
                 </div>
             </div>
+            </>
         );
     }
 
     return (
+        <>
+        {AdminHeaderIfAdmin}
         <div className="max-w-4xl mx-auto p-6">
             <h1 className="text-3xl font-bold mb-3">{survey.title}</h1>
             <p className="text-gray-600 mb-6">{survey.description}</p>
@@ -387,5 +400,6 @@ export default function TakeSurvey() {
                 <button type="submit" className="mt-6 bg-green-600 text-white px-6 py-2 rounded">Submit Survey</button>
             </form>
         </div>
+        </>
     );
 }

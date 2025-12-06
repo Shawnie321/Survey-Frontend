@@ -20,11 +20,13 @@ export default function Layout() {
     navigate("/login");
   }
 
-  // Hide navigation bar for /admin and /edit-survey/:id routes
+  // Hide navigation bar for /admin, /edit-survey/:id, /create-survey, and /survey/:id routes ONLY for admin
+  // Do NOT hide for /surveys (survey list page)
   const hideNav =
     location.pathname === "/admin" ||
     location.pathname.startsWith("/edit-survey") ||
-    location.pathname.startsWith("/create-survey");
+    location.pathname.startsWith("/create-survey") ||
+    (role === "Admin" && location.pathname.startsWith("/survey"));
 
   const current = location.pathname;
   function navClass(path, exact = false) {
