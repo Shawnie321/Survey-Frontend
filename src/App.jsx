@@ -10,6 +10,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminLogin from "./pages/AdminLogin";
+import EditSurvey from "./pages/EditSurvey";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/survey/:id" element={<TakeSurvey />} />
         <Route path="/create-survey" element={<CreateSurvey />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/edit-survey/:id" element={<EditSurvey />} />
       </Route>
 
       <Route path="/login" element={<Login />} />

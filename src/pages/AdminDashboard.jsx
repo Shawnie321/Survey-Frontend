@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import AdminHeader from "../components/AdminHeader";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -143,12 +144,9 @@ export default function AdminDashboard() {
  : null;
 
  return (
+ <>
+ <AdminHeader username={username} currentPage="dashboard" />
  <div className="max-w-7xl mx-auto p-6 space-y-6">
- {/* Header */}
- <div className="flex justify-between items-center">
- <h1 className="text-3xl font-bold text-blue-700">Admin Dashboard</h1>
- </div>
-
  <div className="grid md:grid-cols-3 gap-6">
  {/* --- Survey List --- */}
  <div className="bg-white rounded shadow p-4">
@@ -156,11 +154,20 @@ export default function AdminDashboard() {
  <ul className="divide-y">
  {surveys.map((s) => (
  <li key={s.id} className="py-2 flex justify-between items-center">
+ <div className="flex gap-2 items-center">
  <button
  className="text-blue-600 hover:underline"
  onClick={() => viewSurvey(s)}
  >
  {s.title}
+ </button>
+ </div>
+ <div className="flex gap-2">
+ <button
+ onClick={() => navigate(`/edit-survey/${s.id}`)}
+ className="text-yellow-600 text-sm hover:underline"
+ >
+ Edit
  </button>
  <button
  onClick={() => deleteSurvey(s.id)}
@@ -168,6 +175,7 @@ export default function AdminDashboard() {
  >
  Delete
  </button>
+ </div>
  </li>
  ))}
  </ul>
@@ -328,5 +336,6 @@ export default function AdminDashboard() {
  </div>
  )}
  </div>
+ </>
  );
 }
