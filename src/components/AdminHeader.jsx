@@ -53,15 +53,7 @@ export default function AdminHeader({ username }) {
 
         {/* Dropdown Menu */}
         {menuOpen && (
-          <div className="absolute top-16 right-6 bg-white text-gray-800 rounded-lg shadow-xl w-48 py-2 z-50">
-            {onDashboard && (
-              <button
-                onClick={() => handleNavigate("/create-survey")}
-                className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
-              >
-                ➕ Create Survey
-              </button>
-            )}
+            <div className="absolute top-16 right-6 bg-white text-gray-800 rounded-lg shadow-xl w-48 py-2 z-50">
             {(onSurveyList || onCreateSurvey || onEditSurvey) && (
               <button
                 onClick={() => handleNavigate("/admin")}
@@ -70,12 +62,22 @@ export default function AdminHeader({ username }) {
                 📊 Back to Dashboard
               </button>
             )}
+            {(onDashboard || onEditSurvey || onSurveyList) && (
+              <button
+                onClick={() => handleNavigate("/create-survey")}
+                className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
+              >
+                ➕ Create Survey
+              </button>
+            )}
+            {(onCreateSurvey || onEditSurvey || onDashboard) && (
             <button
               onClick={() => handleNavigate("/surveys")}
               className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
             >
               📋 Surveys
             </button>
+            )}
             <hr className="my-1" />
             <button
               onClick={handleLogout}
