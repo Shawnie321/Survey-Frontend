@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-export default function AdminHeader({ username }) {
+export default function AdminHeader({ username, isReview, role }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,6 +77,14 @@ export default function AdminHeader({ username }) {
             >
               📋 Surveys
             </button>
+            )}
+            {isReview && role === 'Admin' && (
+              <button
+                onClick={() => handleNavigate("/admin")}
+                className="w-full text-left px-4 py-2 hover:bg-blue-50 transition font-medium flex items-center gap-2"
+              >
+                🏠 Back to Admin Dashboard
+              </button>
             )}
             <hr className="my-1" />
             <button
