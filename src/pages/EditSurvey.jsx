@@ -124,7 +124,7 @@ export default function EditSurvey() {
 
   return (
     <>
-      <AdminHeader />
+      <AdminHeader username={localStorage.getItem("username")}/>
       <div className="max-w-4xl mx-auto p-8">
         <h2 className="text-3xl font-bold text-blue-700 mb-6 text-center">Edit Survey</h2>
 
@@ -188,7 +188,7 @@ export default function EditSurvey() {
                       onChange={(e) => updateQuestion(idx, "questionType", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
-                      <option value="Rating">Rating (1-5)</option>
+                      <option value="Rating">Rating (1-10)</option>
                       <option value="Text">Text</option>
                       <option value="MultipleChoice">Multiple Choice</option>
                     </select>
