@@ -25,7 +25,7 @@ export default function About() {
               className="w-6 h-6"
             />
             <img
-              src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg"
+              src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg"
               alt="SQL"
               className="w-6 h-6"
             />

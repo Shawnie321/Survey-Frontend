@@ -1,6 +1,46 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AdminHeader from "../components/AdminHeader";
+import Markdown from "react-markdown";
+
+const TERMS_AND_CONDITIONS = `
+# **Terms and Conditions**
+**Please read these terms and conditions carefully before using our survey application.**
+
+**1. Introduction**
+By accessing or using the survey application, you agree to be bound by these terms and conditions. If you do not agree with any part of these terms, you must not use the application.
+
+**2. User Accounts**
+To access certain features of the application, you may be required to create an account. You are responsible for maintaining the confidentiality of your account information, including your password. You agree to notify us immediately of any unauthorized use of your account or any other breach of security.
+
+**3. Survey Participation**
+Your participation in surveys is voluntary. You have the right to refuse to participate or to withdraw from a survey at any time without penalty.
+
+**4. Privacy**
+We are committed to protecting your privacy. Your responses to surveys are anonymous, and we do not collect personally identifiable information unless you provide it voluntarily.
+
+**5. Intellectual Property**
+All content and materials available on the application, including but not limited to text, graphics, logos, and software, are the property of the application or its content suppliers and are protected by intellectual property laws.
+
+**6. Disclaimers**
+The application is provided on an "as is" and "as available" basis. We make no representations or warranties of any kind, express or implied, regarding the operation of the application or the information, content, materials, or products included in the application.
+
+**7. Limitation of Liability**
+To the fullest extent permitted by law, we shall not be liable for any direct, indirect, incidental, special, or consequential damages arising out of or in connection with the use of the application or the participation in surveys.
+
+**8. Changes to Terms**
+We reserve the right to modify these terms and conditions at any time. Your continued use of the application after any changes constitutes your acceptance of the new terms.
+
+**9. Governing Law**
+These terms and conditions shall be governed by and construed in accordance with the laws of the jurisdiction in which the application operates.
+
+**10. Contact Us**
+
+If you have any questions or concerns about these terms and conditions, please contact us at **gymsurvey@app.com**.
+
+--
+
+*Last updated: December 07,2025*`;
 
 export default function TakeSurvey() {
     const { id } = useParams();
@@ -14,6 +54,7 @@ export default function TakeSurvey() {
     const [isReview, setIsReview] = useState(false);
     const [reviewResponse, setReviewResponse] = useState(null);
     const [reviewAnswers, setReviewAnswers] = useState(null); // map questionId -> string
+    const [showTerms, setShowTerms] = useState(false);
     const username = localStorage.getItem("username") || "Anonymous";
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
@@ -381,7 +422,7 @@ export default function TakeSurvey() {
                     );
                 })}
 
-                {/* Consent checkbox */}
+                {/* Consent checkbox with clickable terms */}
                 <div className="flex items-start gap-3">
                     <input
                         id="consent"
@@ -391,9 +432,35 @@ export default function TakeSurvey() {
                         className="mt-1 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
                     />
                     <label htmlFor="consent" className="text-sm text-gray-700">
-                        I agree to the privacy terms and conditions. <span className="text-gray-400">(Required)</span>
+                        I agree to the privacy{' '}
+                        <button
+                            type="button"
+                            className="underline text-blue-600 hover:text-blue-800"
+                            style={{ background: 'none', border: 'none', padding:0, margin:0, cursor: 'pointer' }}
+                            onClick={() => setShowTerms(true)}
+                        >
+                            terms and conditions
+                        </button>
+                        . <span className="text-gray-400">(Required)</span>
                     </label>
                 </div>
+
+                {showTerms && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-6 relative">
+                    <button
+                        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+                        onClick={() => setShowTerms(false)}
+                        aria-label="Close terms and conditions"
+                    >
+                        &times;
+                    </button>
+                    <div className="prose max-w-none" style={{ maxHeight:400, overflowY: 'auto' }}>
+                        <Markdown>{TERMS_AND_CONDITIONS}</Markdown>
+                    </div>
+                    </div>
+                </div>
+                )}
 
                 {error && <p className="text-red-600 text-sm">{error}</p>}
 
