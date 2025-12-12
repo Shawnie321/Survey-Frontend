@@ -99,10 +99,10 @@ export default function CreateSurvey() {
   return (
     <>
       <AdminHeader username={username} currentPage="create" />
-      <div className="max-w-2xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-blue-700 mb-6">Create New Survey</h1>
+      <div className="max-w-full sm:max-w-2xl mx-auto px-4 sm:px-6 p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-blue-700 mb-6">Create New Survey</h1>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 space-y-6">
           {/* Title */}
           <div>
             <label className="block text-lg font-semibold text-gray-700 mb-2">
@@ -113,7 +113,7 @@ export default function CreateSurvey() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter survey title"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:px-4 sm:py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
@@ -127,7 +127,7 @@ export default function CreateSurvey() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter survey description"
               rows="3"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:px-4 sm:py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
@@ -136,7 +136,7 @@ export default function CreateSurvey() {
             <h2 className="text-xl font-semibold text-gray-700 mb-4">Questions</h2>
             <div className="space-y-4">
               {questions.map((q, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div key={idx} className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
                   <div className="flex justify-between items-center mb-3">
                     <label className="font-medium text-gray-700">Question {idx + 1}</label>
                     {questions.length > 1 && (
@@ -155,14 +155,14 @@ export default function CreateSurvey() {
                     value={q.text}
                     onChange={(e) => updateQuestion(idx, "text", e.target.value)}
                     placeholder="Enter question text"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:px-4 sm:py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
 
                   <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
                   <select
                     value={q.type}
                     onChange={(e) => updateQuestion(idx, "type", e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:px-4 sm:py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="rating">Rating (1-10)</option>
                     <option value="text">Text</option>
@@ -178,7 +178,7 @@ export default function CreateSurvey() {
                         value={q.options}
                         onChange={(e) => updateQuestion(idx, "options", e.target.value)}
                         placeholder="e.g. Yes,No,Maybe"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:px-4 sm:py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
                     </div>
                   )}

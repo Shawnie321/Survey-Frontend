@@ -107,7 +107,7 @@ export default function CreateQuestionForm({ surveyId, onCreated }) {
           disabled={loading}
           className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         >
-          {loading ? "Creating…" : "Create"}
+          {loading ? "Creating..." : "Create"}
         </button>
       </div>
     </form>

@@ -1,7 +1,7 @@
 export default function Services() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-8 flex items-center justify-center">
-      <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6 sm:p-8 flex items-center justify-center">
+      <div className="max-w-full sm:max-w-xl w-full bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100">
         <h2 className="text-4xl font-extrabold mb-6 text-blue-700 text-center tracking-tight">
           Our Services
         </h2>

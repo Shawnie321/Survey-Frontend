@@ -45,7 +45,7 @@ export default function Login() {
       </button>
 
       <div className="max-w-xs w-full px-4">
-        <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-full space-y-4">
+          <form onSubmit={handleLogin} className="bg-white p-6 sm:p-8 rounded shadow-md w-full space-y-4">
           <h2 className="text-xl font-semibold text-center">User Login</h2>
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <input

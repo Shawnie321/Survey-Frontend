@@ -61,7 +61,7 @@ export default function SurveyList() {
   if (!username) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center">
-        <div className="max-w-2xl mx-auto text-center bg-white p-8 rounded-2xl shadow">
+        <div className="max-w-full sm:max-w-2xl mx-auto text-center bg-white p-6 sm:p-8 rounded-2xl shadow">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">
             Please log in to view surveys
           </h1>

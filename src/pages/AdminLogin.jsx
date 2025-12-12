@@ -77,7 +77,7 @@ export default function AdminLogin() {
           >
               ← Back to Home
           </button>
-      <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-80 space-y-4">
+      <form onSubmit={handleLogin} className="bg-white p-6 sm:p-8 rounded shadow-md w-full max-w-xs sm:w-80 space-y-4">
         <h2 className="text-xl font-semibold text-center">Admin Login</h2>
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <input

@@ -119,13 +119,13 @@ export default function EditSurvey() {
     }
   }
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
+  if (loading) return <div className="p-6 sm:p-8 text-center">Loading...</div>;
+  if (error) return <div className="p-6 sm:p-8 text-center text-red-600">{error}</div>;
 
   return (
     <>
       <AdminHeader username={localStorage.getItem("username")}/>
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="max-w-full sm:max-w-4xl mx-auto p-6 sm:p-8">
         <h2 className="text-3xl font-bold text-blue-700 mb-6 text-center">Edit Survey</h2>
 
         {message && (
@@ -179,14 +179,14 @@ export default function EditSurvey() {
                       value={q.questionText}
                       onChange={(e) => updateQuestion(idx, "questionText", e.target.value)}
                       placeholder="Enter question text"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
 
                     <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
                     <select
                       value={q.questionType}
                       onChange={(e) => updateQuestion(idx, "questionType", e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
                       <option value="Rating">Rating (1-10)</option>
                       <option value="Text">Text</option>
@@ -201,7 +201,7 @@ export default function EditSurvey() {
                           value={q.options}
                           onChange={(e) => updateQuestion(idx, "options", e.target.value)}
                           placeholder="e.g. Yes,No,Maybe"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                       </div>
                     )}

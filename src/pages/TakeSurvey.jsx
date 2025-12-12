@@ -84,7 +84,7 @@ export default function TakeSurvey() {
                 const data = await res.json();
                 setSurvey(data);
 
-                // Check skip flag (set when user requests a retake) — prevents auto review detection
+                // Check skip flag (set when user requests a retake) ï¿½ prevents auto review detection
                 const skipKey = `skip_review_${id}`;
                 const skip = sessionStorage.getItem(skipKey) === "1";
                 if (skip) {
@@ -178,7 +178,7 @@ export default function TakeSurvey() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, token, username, isReview]);
 
-    if (!survey) return <div className="p-8 text-center">Loading survey...</div>;
+    if (!survey) return <div className="p-6 sm:p-8 text-center">Loading survey...</div>;
 
     // Use only visibleQuestions (exclude consent-duplicate question)
     const visibleQuestions = survey.questions.filter((q) => !isConsentQuestion(q));
@@ -190,7 +190,7 @@ export default function TakeSurvey() {
         return (
             <>
             {AdminHeaderIfAdmin}
-            <div className="max-w-3xl mx-auto p-8 text-center">
+            <div className="max-w-full sm:max-w-3xl mx-auto p-6 sm:p-8 text-center">
                 <h2 className="text-xl font-semibold">This survey has no questions yet.</h2>
                 <p className="mt-2 text-gray-600">If you are the admin, please add questions.</p>
             </div>

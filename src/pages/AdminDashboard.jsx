@@ -34,6 +34,9 @@ export default function AdminDashboard() {
     const [filteredResponses, setFilteredResponses] = useState([]);
     const [showConfirm, setShowConfirm] = useState(null);
     const [searchUsername, setSearchUsername] = useState("");
+    const [qrOpen, setQrOpen] = useState(false);
+    const [qrSrc, setQrSrc] = useState("");
+    const [qrLoading, setQrLoading] = useState(false);
 
     useEffect(() => {
         if (role !== "Admin") navigate("/login");
@@ -160,6 +163,33 @@ export default function AdminDashboard() {
         XLSX.utils.book_append_sheet(wb, sheet, "Responses");
         const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
         saveAs(new Blob([buffer]), `${selected?.title || "Survey"}_Responses.xlsx`);
+    }
+
+    // Generate QR for a survey
+    async function generateQRCodeForSurvey(survey) {
+        setQrLoading(true);
+        const url = `${window.location.origin}/survey/${survey.id}`;
+        try {
+            // Create a QR using an external API as a fallback and to avoid adding a new dependency
+            const dataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
+            setQrSrc(dataUrl);
+            setQrOpen(true);
+        } catch (e) {
+            console.error('Failed to generate QR:', e);
+            alert('Failed to generate QR code');
+        } finally {
+            setQrLoading(false);
+        }
+    }
+
+    function printQr() {
+        if (!qrSrc) return;
+        const w = window.open('', '_blank');
+        if (!w) return alert('Unable to open print window');
+        w.document.write(`<!doctype html><html><head><title>Print QR</title><style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} img{max-width:90%;}</style></head><body><img src="${qrSrc}" alt="Survey QR"/></body></html>`);
+        w.document.close();
+        w.focus();
+        setTimeout(() => { w.print(); w.close(); }, 250);
     }
 
     async function exportToPDF() {
@@ -400,10 +430,10 @@ export default function AdminDashboard() {
     return (
         <>
             <AdminHeader username={username} currentPage="dashboard" />
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
+            <div className="max-w-full sm:max-w-7xl mx-auto px-4 sm:px-6 p-6 space-y-6 overflow-x-hidden">
                 <div className="grid md:grid-cols-3 gap-6">
                     {/* --- Survey List --- */}
-                    <div className="bg-white rounded shadow p-4">
+                    <div className="bg-white rounded shadow p-4 min-w-0">
                         <h2 className="text-lg font-semibold mb-3">All Surveys</h2>
                         <ul className="divide-y">
                             {surveys.map((s) => (
@@ -436,7 +466,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* --- Survey Details + Analytics --- */}
-                    <div className="md:col-span-2 bg-white rounded shadow p-4">
+                    <div className="md:col-span-2 bg-white rounded shadow p-4 min-w-0">
                         {!selected ? (
                             <p className="text-gray-500">Select a survey to view responses.</p>
                         ) : (
@@ -447,8 +477,8 @@ export default function AdminDashboard() {
                                 {analytics && (
                                     <>
                                         {/* Stats */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                                            <div className="bg-blue-100 p-3 rounded text-center">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                            <div className="bg-blue-100 p-3 rounded text-center min-w-0 w-full">
                                                 <h4>Total</h4>
                                                 <p className="text-xl font-bold">
                                                     {analytics.totalResponses}
@@ -476,16 +506,25 @@ export default function AdminDashboard() {
 
                                         {/* Chart */}
                                         {chartData && (
-                                            <div className="bg-gray-50 p-4 rounded shadow mb-6">
-                                                <Bar data={chartData} />
+                                            <div className="bg-gray-50 p-4 rounded shadow mb-6 min-w-0 w-full overflow-hidden">
+                                                <div className="w-full max-w-full h-48 sm:h-64 md:h-96 min-w-0">
+                                                    <Bar
+                                                        data={chartData}
+                                                        options={{
+                                                            responsive: true,
+                                                            maintainAspectRatio: false,
+                                                            plugins: { legend: { display: false } },
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                         )}
                                     </>
                                 )}
 
                                 {/* Filter + Export + Search */}
-                                <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-                                    <div className="flex gap-2 items-center">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 w-full">
+                                    <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
                                         <input
                                             type="date"
                                             value={startDate}
@@ -511,34 +550,40 @@ export default function AdminDashboard() {
                                             Reset
                                         </button>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 items-center w-full sm:w-auto justify-start sm:justify-end">
                                         <input
                                             type="text"
                                             placeholder="Search username..."
                                             value={searchUsername}
                                             onChange={(e) => searchByUsername(e.target.value)}
-                                            className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                                                className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
                                         />
                                         <button
                                             onClick={exportToExcel}
-                                            className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700"
+                                                                className="bg-green-600 text-white px-3 py-2 rounded shadow hover:bg-green-700 w-full sm:w-auto"
                                         >
                                             Excel
                                         </button>
                                         <button
                                             onClick={exportToPDF}
-                                            className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700"
+                                                                className="bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700 w-full sm:w-auto"
                                         >
                                             PDF
+                                        </button>
+                                        {/* QR Code Generator */}
+                                        <button
+                                            onClick={() => generateQRCodeForSurvey(selected)}
+                                            className="bg-indigo-600 text-white px-3 py-2 rounded shadow hover:bg-indigo-700 w-full sm:w-auto"
+                                            disabled={qrLoading}
+                                            title="Generate QR code for the selected survey"
+                                        >
+                                            {qrLoading ? 'Generating...' : 'Generate QR'}
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* --- Responses Table --- */}
-                                <div
-                                    className="rounded-xl shadow border border-gray-200"
-                                    style={{ maxHeight: "500px", overflowY: "auto" }}
-                                >
+                                <div className="rounded-xl shadow border border-gray-200 max-h-[500px] overflow-auto min-w-0">
                                     <table id="responsesTable" className="min-w-full border-collapse text-sm">
                                         <thead className="bg-blue-600 text-white top-0">
                                             <tr>
@@ -598,6 +643,37 @@ export default function AdminDashboard() {
                                 >
                                     Delete
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* --- QR Modal --- */}
+                {qrOpen && (
+                    <div onClick={() => setQrOpen(false)} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                        <div onClick={(e) => e.stopPropagation()} className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
+                            <h3 className="mb-4 text-lg font-semibold">QR Code for "{selected?.title}"</h3>
+                            <div className="flex flex-col items-center gap-4">
+                                <img src={qrSrc} alt="Survey QR code" className="w-64 h-64 object-contain" />
+                                <div className="flex gap-2 w-full">
+                                    <button
+                                        className="flex-1 bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700"
+                                        onClick={printQr}
+                                    >
+                                        Print
+                                    </button>
+                                    <button
+                                        className="flex-1 bg-gray-300 px-3 py-2 rounded hover:bg-gray-400"
+                                        onClick={() => {
+                                            navigator.clipboard?.writeText(`${window.location.origin}/survey/${selected?.id}`);
+                                            alert('Survey link copied to clipboard');
+                                        }}
+                                    >
+                                        Copy Link
+                                    </button>
+                                </div>
+                                <div className="w-full text-right mt-2">
+                                    <button className="text-sm text-gray-600 hover:underline" onClick={() => setQrOpen(false)}>Close</button>
+                                </div>
                             </div>
                         </div>
                     </div>

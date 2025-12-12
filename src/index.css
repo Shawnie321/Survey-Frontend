@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Prevent horizontal overflow introduced by charts or wide tables on small screens */
+html, body, #root {
+	width: 100%;
+	overflow-x: hidden;
+}
