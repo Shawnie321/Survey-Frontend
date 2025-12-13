@@ -174,7 +174,8 @@ export default function AdminDashboard() {
         if (!stored[survey.id]) stored[survey.id] = key;
         localStorage.setItem("surveyShares", JSON.stringify(stored));
 
-        const url = `${window.location.origin}/survey/${survey.id}?share=${encodeURIComponent(key)}`;
+        const baseFrontend = import.meta.env.VITE_FRONTEND_URL ? import.meta.env.VITE_FRONTEND_URL.replace(/\/+$/, '') : window.location.origin;
+        const url = `${baseFrontend}/survey/${survey.id}?share=${encodeURIComponent(key)}`;
         try {
             // Create a QR using an external API as a fallback and to avoid adding a new dependency
             const dataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
@@ -674,7 +675,8 @@ export default function AdminDashboard() {
                                                 localStorage.setItem("surveyShares", JSON.stringify(stored));
                                                 return k;
                                             })();
-                                            navigator.clipboard?.writeText(`${window.location.origin}/survey/${selected?.id}?share=${encodeURIComponent(shareKey)}`);
+                                            const baseFrontend = import.meta.env.VITE_FRONTEND_URL ? import.meta.env.VITE_FRONTEND_URL.replace(/\/+$/, '') : window.location.origin;
+                                            navigator.clipboard?.writeText(`${baseFrontend}/survey/${selected?.id}?share=${encodeURIComponent(shareKey)}`);
                                             alert('Survey link copied to clipboard');
                                         }}
                                     >
