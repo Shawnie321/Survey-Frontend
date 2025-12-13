@@ -13,6 +13,25 @@ export default function Layout() {
     setUsername(localStorage.getItem("username"));
   }, []);
 
+  useEffect(() => {
+    const active = sessionStorage.getItem('active_share');
+    if (active) {
+      try {
+        const parsed = JSON.parse(active);
+        if (parsed && parsed.id) {
+          // if we're not on the active survey, redirect and hide nav
+          const expectedPath = `/survey/${parsed.id}`;
+          if (!location.pathname.startsWith(expectedPath)) {
+            // replace history entry to avoid back loop
+            navigate(`${expectedPath}?share=${encodeURIComponent(parsed.share)}`, { replace: true });
+          }
+        }
+      } catch (e) {
+        // ignore malformed
+      }
+    }
+  }, [location.pathname, navigate]);
+
   function handleLogout() {
     // Remove only authentication keys so other data (e.g. survey_<id>_<username>) stays
     localStorage.removeItem("token");
@@ -23,12 +42,15 @@ export default function Layout() {
 
   // Hide navigation bar for /admin, /edit-survey/:id, /create-survey, and /survey/:id routes ONLY for admin
   // Do NOT hide for /surveys (survey list page)
+  const activeShare = sessionStorage.getItem('active_share');
+
   const hideNav =
     location.pathname === "/admin" ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/edit-survey") ||
     location.pathname.startsWith("/create-survey") ||
-    (role === "Admin" && location.pathname.startsWith("/survey"));
+    (role === "Admin" && location.pathname.startsWith("/survey")) ||
+    !!activeShare;
 
   const current = location.pathname;
   function navClass(path, exact = false) {

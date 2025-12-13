@@ -52,6 +52,7 @@ export default function TakeSurvey() {
     const [consent, setConsent] = useState(false);
     const [error, setError] = useState("");
     const [isReview, setIsReview] = useState(false);
+    const [isSharedView, setIsSharedView] = useState(false);
     const [reviewResponse, setReviewResponse] = useState(null);
     const [reviewAnswers, setReviewAnswers] = useState(null); // map questionId -> string
     const [showTerms, setShowTerms] = useState(false);
@@ -62,7 +63,15 @@ export default function TakeSurvey() {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         if (params.get("review") === "true") setIsReview(true);
-    }, [location.search]);
+        const share = params.get("share");
+        if (share) {
+            // set active share session so navigation is restricted
+            sessionStorage.setItem("active_share", JSON.stringify({ id, share }));
+            setIsSharedView(true);
+        } else {
+            setIsSharedView(false);
+        }
+    }, [location.search, id]);
 
     // Identify and exclude the survey question that duplicates the consent checkbox.
     // Adjust this check if your backend uses a different wording.
@@ -79,9 +88,35 @@ export default function TakeSurvey() {
     useEffect(() => {
         async function load() {
             try {
-                const res = await fetch(`https://localhost:7126/api/surveys/${id}`);
-                if (!res.ok) throw new Error("Failed to load survey");
+                const p = new URLSearchParams(location.search);
+                const share = p.get("share");
+                const url = `https://localhost:7126/api/surveys/${id}${share ? "?share=" + encodeURIComponent(share) : ""}`;
+                const res = await fetch(url, { headers: share ? { 'X-Share-Key': share } : {} });
+                if (!res.ok) {
+                    if (res.status === 403) {
+                        setError("Access denied. This survey is only accessible via a private link.");
+                        return;
+                    }
+                    throw new Error("Failed to load survey");
+                }
                 const data = await res.json();
+
+                // If a share param exists, validate that it corresponds to this survey id at least client-side.
+                if (share) {
+                    try {
+                        const decoded = JSON.parse(atob(share));
+                        if (String(decoded.id) !== String(id)) {
+                            setError("Invalid share link for this survey.");
+                            return;
+                        }
+                    } catch (e) {
+                        // if it fails to decode, treat as invalid
+                        console.warn('Invalid share token format', e);
+                        setError("Invalid share link.");
+                        return;
+                    }
+                }
+
                 setSurvey(data);
 
                 // Check skip flag (set when user requests a retake) � prevents auto review detection
@@ -178,7 +213,19 @@ export default function TakeSurvey() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, token, username, isReview]);
 
-    if (!survey) return <div className="p-6 sm:p-8 text-center">Loading survey...</div>;
+    if (!survey) {
+        if (error) {
+            return (
+                <div className="p-6 sm:p-8 text-center">
+                    <h2 className="text-xl font-semibold mb-4 text-red-600">{error}</h2>
+                    <div className="mt-4">
+                        <button onClick={() => { sessionStorage.removeItem('active_share'); navigate('/surveys'); }} className="bg-gray-200 px-3 py-1 rounded">Back to Surveys</button>
+                    </div>
+                </div>
+            );
+        }
+        return <div className="p-6 sm:p-8 text-center">Loading survey...</div>;
+    }
 
     // Use only visibleQuestions (exclude consent-duplicate question)
     const visibleQuestions = survey.questions.filter((q) => !isConsentQuestion(q));
@@ -253,9 +300,12 @@ export default function TakeSurvey() {
         };
 
         try {
-            const res = await fetch(`https://localhost:7126/api/surveys/${id}/responses`, {
+            const params = new URLSearchParams(location.search);
+            const shareParam = params.get("share");
+            const postUrl = `https://localhost:7126/api/surveys/${id}/responses${shareParam ? `?share=${encodeURIComponent(shareParam)}` : ""}`;
+            const res = await fetch(postUrl, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...(shareParam ? { 'X-Share-Key': shareParam } : {}) },
                 body: JSON.stringify(payload),
             });
             if (!res.ok) {
@@ -265,6 +315,11 @@ export default function TakeSurvey() {
             localStorage.setItem(`survey_${id}_${username}`, "completed");
             setConsent(false);
             setError("");
+            const paramsAfter = new URLSearchParams(location.search);
+            const shareAfter = paramsAfter.get("share");
+            if (shareAfter) {
+                sessionStorage.removeItem('active_share');
+            }
             navigate("/surveys");
         } catch (err) {
             setError(err?.message || "Submission failed");
@@ -354,6 +409,15 @@ export default function TakeSurvey() {
         <>
         {AdminHeaderIfAdmin}
         <div className="max-w-4xl mx-auto p-6">
+            {isSharedView && (
+                <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm rounded">
+                    Viewing via private link — this session allows access to this survey only.
+                    <div className="mt-2 flex gap-2">
+                        <button onClick={() => { sessionStorage.removeItem('active_share'); setIsSharedView(false); navigate('/surveys'); }}
+                            className="bg-gray-200 px-3 py-1 rounded">Exit Shared View</button>
+                    </div>
+                </div>
+            )}
             <h1 className="text-3xl font-bold mb-3">{survey.title}</h1>
             <p className="text-gray-600 mb-6">{survey.description}</p>
 

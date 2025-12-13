@@ -38,6 +38,11 @@ export default function AdminDashboard() {
     const [qrSrc, setQrSrc] = useState("");
     const [qrLoading, setQrLoading] = useState(false);
 
+    function generateShareKeyForSurveyId(surveyId) {
+        const uuid = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now().toString(36));
+        return btoa(JSON.stringify({ id: surveyId, uuid }));
+    }
+
     useEffect(() => {
         if (role !== "Admin") navigate("/login");
     }, [navigate, role]);
@@ -168,7 +173,17 @@ export default function AdminDashboard() {
     // Generate QR for a survey
     async function generateQRCodeForSurvey(survey) {
         setQrLoading(true);
-        const url = `${window.location.origin}/survey/${survey.id}`;
+        // ensure we have a persistent share key in localStorage for the survey
+        const stored = JSON.parse(localStorage.getItem("surveyShares" ) || "{}");
+        function generateShareKeyForSurvey(surveyId) {
+            const uuid = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now().toString(36));
+            return btoa(JSON.stringify({ id: surveyId, uuid }));
+        }
+        const key = stored[survey.id] || generateShareKeyForSurvey(survey.id);
+        if (!stored[survey.id]) stored[survey.id] = key;
+        localStorage.setItem("surveyShares", JSON.stringify(stored));
+
+        const url = `${window.location.origin}/survey/${survey.id}?share=${encodeURIComponent(key)}`;
         try {
             // Create a QR using an external API as a fallback and to avoid adding a new dependency
             const dataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
@@ -664,7 +679,14 @@ export default function AdminDashboard() {
                                     <button
                                         className="flex-1 bg-gray-300 px-3 py-2 rounded hover:bg-gray-400"
                                         onClick={() => {
-                                            navigator.clipboard?.writeText(`${window.location.origin}/survey/${selected?.id}`);
+                                            const stored = JSON.parse(localStorage.getItem("surveyShares") || "{}");
+                                            const shareKey = stored[selected?.id] || (() => {
+                                                const k = generateShareKeyForSurveyId(selected?.id);
+                                                stored[selected?.id] = k;
+                                                localStorage.setItem("surveyShares", JSON.stringify(stored));
+                                                return k;
+                                            })();
+                                            navigator.clipboard?.writeText(`${window.location.origin}/survey/${selected?.id}?share=${encodeURIComponent(shareKey)}`);
                                             alert('Survey link copied to clipboard');
                                         }}
                                     >
