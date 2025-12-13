@@ -15,6 +15,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import AdminHeader from "../components/AdminHeader";
+import { apiFetch } from "../utils/api";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -47,13 +48,18 @@ export default function AdminDashboard() {
         if (role !== "Admin") navigate("/login");
     }, [navigate, role]);
 
+
+
     useEffect(() => {
-        fetch("https://localhost:7126/api/surveys", {
-            headers: { Authorization: `Bearer ${token}` },
-        })
-            .then((r) => r.json())
-            .then(setSurveys)
-            .catch(console.error);
+        (async function() {
+            try {
+                const r = await apiFetch('/api/surveys');
+                const data = await r.json();
+                setSurveys(data);
+            } catch (e) {
+                console.error(e);
+            }
+        })();
     }, [token]);
 
     async function viewSurvey(survey) {
@@ -70,15 +76,7 @@ export default function AdminDashboard() {
         console.log("Token:", token.substring(0, 20) + "..."); // Log first 20 chars only
 
         try {
-            const res = await fetch(
-                `https://localhost:7126/api/surveys/${survey.id}/responses`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+            const res = await apiFetch(`/api/surveys/${survey.id}/responses`);
 
             if (!res.ok) {
                 console.error("Responses API error:", res.status, res.statusText);
@@ -93,6 +91,7 @@ export default function AdminDashboard() {
             }
 
             const data = await res.json();
+
             console.log("Responses data:", data);
             setResponses(data || []);
             setFilteredResponses(data || []);
@@ -102,12 +101,7 @@ export default function AdminDashboard() {
         }
 
         try {
-            const ares = await fetch(
-                `https://localhost:7126/api/analytics/${survey.id}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            const ares = await apiFetch(`/api/analytics/${survey.id}`);
             if (!ares.ok) {
                 console.error("Analytics API error:", ares.status, ares.statusText);
                 return;
@@ -122,10 +116,7 @@ export default function AdminDashboard() {
 
     async function deleteSurvey(id) {
         if (!window.confirm("Delete this survey?")) return;
-        await fetch(`https://localhost:7126/api/surveys/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        await apiFetch(`/api/surveys/${id}`, { method: "DELETE" });
         setSurveys(surveys.filter((s) => s.id !== id));
         setSelected(null);
     }
@@ -412,10 +403,7 @@ export default function AdminDashboard() {
 
     async function deleteResponse(id) {
         try {
-            await fetch(`https://localhost:7126/api/surveyresponses/${id}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await apiFetch(`/api/surveyresponses/${id}`, { method: "DELETE" });
             alert("Deleted successfully!");
             setShowConfirm(null);
             setResponses(responses.filter((r) => r.id !== id));

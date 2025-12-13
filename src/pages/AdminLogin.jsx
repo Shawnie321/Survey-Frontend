@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "https://localhost:7126";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function AdminLogin() {
   const [username, setUsername] = useState("");

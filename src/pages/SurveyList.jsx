@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AdminHeader from "../components/AdminHeader";
+import { apiFetch } from "../utils/api";
 
 export default function SurveyList() {
   const [surveys, setSurveys] = useState([]);
@@ -13,7 +14,7 @@ export default function SurveyList() {
   useEffect(() => {
     if (!username) return; // don't fetch when not logged in
 
-    fetch("https://localhost:7126/api/surveys", {
+    apiFetch('/api/surveys', {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((res) => res.json())
@@ -28,7 +29,7 @@ export default function SurveyList() {
     async function loadCompleted() {
       try {
         // Preferred endpoint - adjust if your backend exposes a different path
-        const primary = await fetch("https://localhost:7126/api/users/me/completed-surveys", {
+        const primary = await apiFetch('/api/users/me/completed-surveys', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -39,7 +40,7 @@ export default function SurveyList() {
         }
 
         // Fallback endpoint (alternative backend naming)
-        const alt = await fetch("https://localhost:7126/api/surveys/completed", {
+        const alt = await apiFetch('/api/surveys/completed', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (alt.ok) {

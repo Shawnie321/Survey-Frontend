@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch } from "../utils/api";
 
 export default function CreateQuestionForm({ surveyId, onCreated }) {
   const [questionText, setQuestionText] = useState("");
@@ -21,17 +22,10 @@ export default function CreateQuestionForm({ surveyId, onCreated }) {
     };
 
     try {
-      const res = await fetch(
-        `https://localhost:7126/api/surveys/${surveyId}/questions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await apiFetch(`/api/surveys/${surveyId}/questions`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
       setLoading(false);
 

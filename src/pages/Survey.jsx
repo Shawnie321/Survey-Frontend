@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch } from "../utils/api";
 
 export default function Survey() {
   const [name, setName] = useState("");
@@ -17,7 +18,7 @@ export default function Survey() {
     };
 
     try {
-      const response = await fetch("https://localhost:7126/api/surveyresponses", {
+      const response = await apiFetch('/api/surveyresponses', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

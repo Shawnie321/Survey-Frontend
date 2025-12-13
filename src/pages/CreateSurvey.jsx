@@ -65,7 +65,7 @@ export default function CreateSurvey() {
         };
       });
 
-      const res = await fetch("https://localhost:7126/api/surveys", {
+      const res = await apiFetch('/api/surveys', {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

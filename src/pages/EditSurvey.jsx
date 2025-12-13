@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminHeader from "../components/AdminHeader";
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "https://localhost:7126";
+import { apiFetch } from "../utils/api";
 
 export default function EditSurvey() {
   const { id } = useParams();
@@ -20,7 +19,7 @@ export default function EditSurvey() {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch(`${API_BASE}/api/surveys/${id}`);
+        const res = await apiFetch(`/api/surveys/${id}`);
         if (!res.ok) throw new Error("Failed to load survey");
         const data = await res.json();
         setTitle(data.title);
@@ -97,12 +96,8 @@ export default function EditSurvey() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/api/surveys/${id}`, {
+      const res = await apiFetch(`/api/surveys/${id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AdminHeader from "../components/AdminHeader";
+import { apiFetch, apiUrl } from "../utils/api";
 import Markdown from "react-markdown";
 
 const TERMS_AND_CONDITIONS = `
@@ -90,8 +91,7 @@ export default function TakeSurvey() {
             try {
                 const p = new URLSearchParams(location.search);
                 const share = p.get("share");
-                const url = `https://localhost:7126/api/surveys/${id}${share ? "?share=" + encodeURIComponent(share) : ""}`;
-                const res = await fetch(url, { headers: share ? { 'X-Share-Key': share } : {} });
+                const res = await apiFetch(`/api/surveys/${id}${share ? `?share=${encodeURIComponent(share)}` : ''}`, { headers: share ? { 'X-Share-Key': share } : {} });
                 if (!res.ok) {
                     if (res.status === 403) {
                         setError("Access denied. This survey is only accessible via a private link.");
@@ -133,9 +133,7 @@ export default function TakeSurvey() {
                     // Try answers endpoint first
                     if (token) {
                         try {
-                            const ansRes = await fetch(`https://localhost:7126/api/surveys/${id}/responses/user/me/answers`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                            });
+                            const ansRes = await apiFetch(`/api/surveys/${id}/responses/user/me/answers`);
                             if (ansRes.ok) {
                                 const ansData = await ansRes.json();
                                 const map = {};
@@ -155,7 +153,7 @@ export default function TakeSurvey() {
 
                     // fallback: fetch all responses
                     try {
-                        const rres = await fetch(`https://localhost:7126/api/surveys/${id}/responses`);
+                        const rres = await apiFetch(`/api/surveys/${id}/responses`);
                         if (rres.ok) {
                             const rdata = await rres.json();
                             const match = (rdata || []).reverse().find(r => (r.username || "Anonymous") === username);
@@ -177,9 +175,7 @@ export default function TakeSurvey() {
                     // If not already in review and token present, optionally check server for existing answers to auto-set review
                     if (token) {
                         try {
-                            const checkRes = await fetch(`https://localhost:7126/api/surveys/${id}/responses/user/me/answers`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                            });
+                            const checkRes = await apiFetch(`/api/surveys/${id}/responses/user/me/answers`);
                             if (checkRes.ok) {
                                 const checkData = await checkRes.json();
                                 if (Array.isArray(checkData) && checkData.length > 0) {
@@ -302,10 +298,9 @@ export default function TakeSurvey() {
         try {
             const params = new URLSearchParams(location.search);
             const shareParam = params.get("share");
-            const postUrl = `https://localhost:7126/api/surveys/${id}/responses${shareParam ? `?share=${encodeURIComponent(shareParam)}` : ""}`;
-            const res = await fetch(postUrl, {
+            const res = await apiFetch(`/api/surveys/${id}/responses${shareParam ? `?share=${encodeURIComponent(shareParam)}` : ''}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...(shareParam ? { 'X-Share-Key': shareParam } : {}) },
+                headers: { ...(shareParam ? { 'X-Share-Key': shareParam } : {}) },
                 body: JSON.stringify(payload),
             });
             if (!res.ok) {

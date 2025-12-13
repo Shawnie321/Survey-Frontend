@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch } from "../utils/api";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Register() {
@@ -61,7 +62,7 @@ export default function Register() {
         // CreatedAt omitted so server can set it
       };
 
-      const res = await fetch("https://localhost:7126/api/auth/register", {
+      const res = await apiFetch('/api/auth/register', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
