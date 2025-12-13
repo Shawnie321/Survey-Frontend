@@ -114,6 +114,7 @@ export default function Layout() {
               {username ? (
                 <>
                   <span className="text-sm">👋 {username}</span>
+                  <button onClick={handleLogout} className="bg-white text-blue-600 px-3 py-1 rounded text-sm hover:bg-gray-100">Logout</button>
                 </>
               ) : (
                 <Link to="/login" className={`bg-white text-blue-600 px-3 py-1 rounded ${navClass("/login", true)}`}>
