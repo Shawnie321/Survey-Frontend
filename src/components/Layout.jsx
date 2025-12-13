@@ -66,15 +66,7 @@ export default function Layout() {
           <div className="relative w-full flex items-center px-4 sm:px-6 py-4 pl-14 sm:pl-6">
             {/* left-aligned nav links (flush left) */}
             <div className="hidden sm:flex items-center gap-6">
-              <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
-
-              </Link>
-              <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
-
-              </Link>
-              <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
-
-              </Link>
+              <Link to="/" className={`text-lg font-bold mr-4 ${navClass("/", true)}`}>GYMMY</Link>
               <Link to="/" className={`hover:underline ${navClass("/", true)}`}>
                 Home
               </Link>
@@ -151,7 +143,7 @@ export default function Layout() {
       </main>
       <footer className="bg-gray-900 text-gray-300 py-8 mt-10">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="text-sm">© {new Date().getFullYear()} Survey Platform. All rights reserved.</p>
+          <p className="text-sm">© {new Date().getFullYear()} GYMMY. All rights reserved.</p>
         </div>
       </footer>
     </div>

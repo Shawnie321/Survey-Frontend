@@ -19,7 +19,7 @@ export default function Home() {
                 <div className="bg-gradient-to-br from-indigo-600 to-blue-500 text-white py-24 px-6">
                     <div className="max-w-6xl mx-auto text-center">
                         <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
-                            Welcome {username ? `back, ${username}` : "to our Survey Platform"}!
+                            Welcome {username ? `back, ${username}` : "to GYMMY"}!
                         </h1>
                         <p className="mt-4 text-lg text-blue-100 max-w-2xl mx-auto">
                             Participate in surveys, share your insights, and help us improve our services.
